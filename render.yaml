@@ -62,8 +62,14 @@ services:
       sizeGB: 10
 
   # --------------------------------------------------------- Interfaccia web
-  - type: static
+  # "web" + "env: static" e non un type "static" a se: e cosi che Render
+  # distingue un sito statico da un servizio con processo (vedi il commento
+  # sull'API qui sopra, che invece usa "runtime: node"). I due modi di
+  # dichiarare l'ambiente (env / runtime) convivono nello schema Render per
+  # ragioni storiche.
+  - type: web
     name: volleyvision-web
+    env: static
     buildCommand: npm install && npm run build:packages && npm run build --workspace @vv/web
     staticPublishPath: apps/web/dist
     envVars:
