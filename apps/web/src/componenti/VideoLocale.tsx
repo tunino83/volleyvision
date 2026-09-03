@@ -89,7 +89,7 @@ export default function VideoLocale({ partita }: { partita: any }) {
    * Dichiarare lo scarto invece di nasconderlo e cio che permette di capire,
    * sui file veri, se la tolleranza e accettabile.
    */
-  const vaiAlFotogramma = (frame: number) => {
+  const vaiAlFotogramma = (frame: number, riproduci = false) => {
     const v = video.current;
     if (!v || !fps) return;
     const t = frame / fps;
@@ -103,7 +103,22 @@ export default function VideoLocale({ partita }: { partita: any }) {
       v.onseeked = () => setPresentato({ chiesto: frame, ottenuto: Math.round(v.currentTime * fps) });
     }
     v.currentTime = t;
-    v.pause();
+
+    /*
+     * Riprendere o fermarsi non e la stessa richiesta.
+     *
+     * Chi preme "un fotogramma avanti" sta **ispezionando**: far ripartire il
+     * video gli porterebbe via il fotogramma che voleva guardare. Chi clicca
+     * un'azione nell'elenco vuole **vederla**, e restare fermi sul primo
+     * fotogramma lo costringerebbe a un secondo clic ogni volta.
+     *
+     * `play()` restituisce una promessa che puo essere respinta — il browser
+     * blocca la riproduzione non richiesta dall'utente. Qui nasce sempre da un
+     * clic, quindi passa; si intercetta comunque, perche una promessa
+     * respinta e non gestita finisce nella console come errore.
+     */
+    if (riproduci) void v.play().catch(() => { /* riproduzione negata: resta fermo */ });
+    else v.pause();
   };
 
   const passo = (n: number) => {
@@ -247,7 +262,11 @@ export default function VideoLocale({ partita }: { partita: any }) {
  * La colonna delle azioni. Scorre per conto suo, cosi il video resta fermo:
  * se scorresse la pagina intera, ogni scelta rimanderebbe al punto di partenza.
  */
-function Azioni({ partita, onVai }: { partita: any; onVai: (f: number) => void }) {
+function Azioni({ partita, onVai }: {
+  partita: any;
+  /** `riproduci` distingue l'ispezione dal guardare: vedi `vaiAlFotogramma`. */
+  onVai: (frame: number, riproduci?: boolean) => void;
+}) {
   const [set, setSet] = useState(1);
 
   const q = useQuery({
@@ -274,14 +293,14 @@ function Azioni({ partita, onVai }: { partita: any; onVai: (f: number) => void }
             <div key={a.idx} className="azione">
               <div className="azione-testa">
                 <span className="numerico grassetto">{a.hPt}-{a.aPt}</span>
-                <button className="piccolo" title={`Vai all'inizio dell'azione (${a.frameStart})`}
-                        onClick={() => onVai(a.frameStart)}>inizio</button>
+                <button className="piccolo" title={`Guarda l'azione dall'inizio (fotogramma ${a.frameStart})`}
+                        onClick={() => onVai(a.frameStart, true)}>guarda</button>
               </div>
               <div className="azione-eventi">
                 {(a.eventi as Evento[]).map((e) => (
                   <button key={e.idx} className={`tocco ${e.value ? "esito" : ""}`}
                           title={`${SKILL[e.skill] ?? e.skill}${e.value ? " · " + e.value : ""} — fotogramma ${e.frame}`}
-                          onClick={() => onVai(e.frame)}>
+                          onClick={() => onVai(e.frame, true)}>
                     <span className="tocco-skill">{e.skill}</span>
                     {e.jersey != null && <span className="tocco-maglia">{e.jersey}</span>}
                   </button>
