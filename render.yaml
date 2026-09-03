@@ -24,7 +24,7 @@ services:
     # La radice resta quella del monorepo (rootDir non impostato): i pacchetti
     # condivisi (@vv/schema, @vv/core) si risolvono da li, non da dentro
     # apps/api. E lo stesso principio della guida cPanel.
-    buildCommand: npm install && npm run build:packages && npm run build --workspace @vv/api && (cd apps/api && npx prisma generate)
+    buildCommand: npm install && (cd apps/api && npx prisma generate) && npm run build:packages && npm run build --workspace @vv/api
     startCommand: npm run start --workspace @vv/api
     healthCheckPath: /api/health
     envVars:

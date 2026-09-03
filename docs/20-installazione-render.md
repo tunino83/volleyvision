@@ -46,7 +46,7 @@ descrizione leggibile di cosa creare a mano, servizio per servizio.
 ### L'API
 
 ```
-buildCommand: npm install && npm run build:packages && npm run build --workspace @vv/api && (cd apps/api && npx prisma generate)
+buildCommand: npm install && (cd apps/api && npx prisma generate) && npm run build:packages && npm run build --workspace @vv/api
 startCommand: npm run start --workspace @vv/api
 ```
 
@@ -54,6 +54,14 @@ startCommand: npm run start --workspace @vv/api
 condivisi (`@vv/schema`, `@vv/core`) si risolvono da li tramite gli npm
 workspaces. E lo stesso principio della guida cPanel — puntare la radice
 dentro `apps/api` fa fallire l'avvio con un pacchetto non trovato.
+
+**`prisma generate` viene PRIMA di `nest build`, non dopo.** Il primo
+tentativo aveva l'ordine invertito, e Render lo ha rifiutato con decine di
+errori TypeScript ("implicitly has an 'any' type") sparsi in tutti i
+servizi che interrogano il database: senza il client Prisma generato,
+ogni risultato di query e tipizzato `any`, e la build fallisce. Riprodotto
+in locale rimuovendo il client generato: build fallita con lo stesso schema
+di errori; rigenerato il client prima della build, build pulita.
 
 `healthCheckPath: /api/health` dice a Render come verificare che il servizio
 sia vivo prima di instradargli traffico.
