@@ -1,0 +1,89 @@
+## Blueprint Render — vedi docs/20-installazione-render.md per la guida completa.
+##
+## Descrive tre risorse: il database Postgres, l'API (servizio web Node) e
+## l'interfaccia (sito statico). Su Render, "New > Blueprint" legge questo
+## file e le crea tutte e tre gia collegate fra loro — non serve compilare
+## a mano i campi del pannello.
+##
+## Le variabili segnate `sync: false` vanno impostate a mano nel pannello
+## dopo la creazione: sono segreti, e non devono stare in questo file
+## versionato.
+
+databases:
+  - name: volleyvision-db
+    databaseName: volleyvision
+    plan: free
+    postgresMajorVersion: "16"
+
+services:
+  # ------------------------------------------------------------ API (NestJS)
+  - type: web
+    name: volleyvision-api
+    runtime: node
+    plan: free
+    # La radice resta quella del monorepo (rootDir non impostato): i pacchetti
+    # condivisi (@vv/schema, @vv/core) si risolvono da li, non da dentro
+    # apps/api. E lo stesso principio della guida cPanel.
+    buildCommand: npm install && npm run build:packages && npm run build --workspace @vv/api && (cd apps/api && npx prisma generate)
+    startCommand: npm run start --workspace @vv/api
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: volleyvision-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEB_URL
+        # Sara l'indirizzo del sito statico qui sotto. Va incollato a mano al
+        # primo deploy, perche Render assegna quell'indirizzo solo dopo averlo
+        # creato: non esiste ancora quando si legge questo file.
+        sync: false
+      - key: STORAGE_DRIVER
+        value: local
+      - key: STORAGE_LOCAL_DIR
+        value: /var/data/storage
+      - key: MAIL_DRIVER
+        value: console
+      - key: FORNITORE_ANALISI
+        value: simulato
+      - key: RICONCILIAZIONE_INTERVALLO_MIN
+        value: "60"
+    disk:
+      # SENZA QUESTO DISCO i video caricati spariscono a ogni riavvio o
+      # deploy: il filesystem di un servizio Render e effimero per difetto.
+      # Il piano gratuito non include dischi persistenti: su quel piano i
+      # video non sopravvivono, ed e un limite da conoscere prima di caricarne
+      # uno vero. Vedi docs/20-installazione-render.md.
+      name: volleyvision-storage
+      mountPath: /var/data/storage
+      sizeGB: 10
+
+  # --------------------------------------------------------- Interfaccia web
+  - type: static
+    name: volleyvision-web
+    buildCommand: npm install && npm run build:packages && npm run build --workspace @vv/web
+    staticPublishPath: apps/web/dist
+    envVars:
+      - key: VITE_API_URL
+        # Letta a TEMPO DI BUILD da Vite, non a runtime: va impostata prima
+        # del primo deploy di questo servizio, con l'indirizzo del servizio
+        # API qui sopra. Cambiarla dopo richiede un nuovo build, non basta
+        # riavviare.
+        sync: false
+    routes:
+      # Le rotte le disegna React nel browser: senza questa riscrittura,
+      # ricaricare la pagina su /partite/123 darebbe 404, perche quel file
+      # non esiste sul sito statico.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      # Il guscio (service worker) non va mai conservato dalla cache: se lo
+      # fosse, gli aggiornamenti arriverebbero agli utenti con giorni di
+      # ritardo.
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache, must-revalidate

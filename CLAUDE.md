@@ -24,6 +24,7 @@ rilascio, specifiche di dettaglio, piano di sviluppo).
 | `docs/12-cosa-manca.md` | cosa resta per Fase 1 e Fase 2, aggiornato |
 | `docs/13-video-locale.md` | **prima di pianificare la shell desktop**: perche potrebbe non servire piu |
 | `docs/19-installazione-cpanel.md` | **prima di mettere in esercizio**: cosa installare, i nomi che cPanel cambia, e cosa il codice ancora non fa |
+| `docs/20-installazione-render.md` | **prima di installare su Render**: il file `render.yaml`, le due variabili da impostare a mano, e perche il piano gratuito non conserva i video |
 | `docs/16-piani-e-profili.md` | **parcheggiato**: la proposta dei tre piani e perche non si tara senza il prezzo del fornitore |
 | `docs/17-forum-e-discussioni.md` | prima di progettare qualunque cosa sociale: perche i filtri non possono usare le anagrafiche private |
 | `docs/15-installazione-e-offline.md` | **prima di pianificare Electron o Capacitor**: come si installa e come funziona senza rete, e cosa resta davvero a una shell nativa |
