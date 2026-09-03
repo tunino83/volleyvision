@@ -1,0 +1,425 @@
+// Modello dati di piattaforma. Vedi docs/04-modello-dati.md del progetto.
+//
+// PostgreSQL in ogni ambiente, sviluppo compreso: e il motore di riferimento.
+// Le colonne sono scritte in modo portabile (niente enum native, JSON
+// serializzato come testo), quindi il passaggio a un altro motore relazionale
+// e possibile ma va rivalidato — vedi la nota sulla ricerca case-insensitive
+// in fondo a questo file.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  /// Nessuna password qui: sta in AuthIdentity, insieme alle altre identita.
+  /// Vedi docs/11-utenti-e-accesso.md.
+  nome              String
+  cognome           String
+  ruolo             String   @default("utente")   // admin | segreteria | utente
+  stato             String   @default("attivo")   // attivo | sospeso
+  emailVerificataIl DateTime?
+  ultimoAccesso     DateTime?
+  creatoIl          DateTime @default(now())
+
+  /// Cambio dell'indirizzo: il nuovo resta qui, **non verificato**, finche
+  /// l'utente non conferma dal collegamento ricevuto. Scrivere subito su
+  /// `email` significherebbe chiudere fuori chi sbaglia a digitare.
+  emailInAttesa     String?
+  emailInAttesaDal  DateTime?
+
+  /// Sospensione strutturata. `stato` da solo dice che e sospeso ma non
+  /// perche ne da quando: le due domande che si fanno sempre dopo.
+  sospesoIl         DateTime?
+  sospesoMotivo     String?
+
+  /// GDPR. Il consenso si registra **con la versione** del documento
+  /// accettato: dire "ha accettato" senza dire *cosa* non prova nulla.
+  privacyAccettataIl      DateTime?
+  privacyVersione         String?
+
+  /// GDPR, diritto alla cancellazione. Non si cancella subito: si segna la
+  /// richiesta e si lascia un periodo di ripensamento, perche una
+  /// cancellazione eseguita all'istante e irreversibile per definizione.
+  cancellazioneChiestaIl  DateTime?
+
+  identita          AuthIdentity[]
+  tokens            Token[]
+  teams             Team[]
+  competitions      Competition[]
+  persons           Person[]
+  teamShares        TeamShare[]
+  competitionShares CompetitionShare[]
+  matchesCreate     Match[]         @relation("MatchCreator")
+  notifiche         Notification[]
+  audit             AuditLog[]      @relation("AuditActor")
+  accessi           TentativoAccesso[]
+}
+
+/// Token monouso: verifica email, reimpostazione password, aggiornamento sessione.
+/// Un modo di accedere. Un utente ne ha una o piu: password, Google, Apple.
+/// Tenerle separate dall'utente e cio che rende l'aggiunta di un provider un
+/// innesto e non una riscrittura: chi entra con Google e lo stesso utente che
+/// entrava con la password, non un secondo account.
+/// I tentativi di accesso, riusciti e non.
+///
+/// Serve a due cose che oggi non si possono fare: **frenare chi prova le
+/// password a raffica**, e mostrare all'utente da dove si e entrato nel suo
+/// account. Senza questa tabella la prima e impossibile e la seconda e una
+/// bugia.
+///
+/// `utenteId` e opzionale apposta: un tentativo su un indirizzo inesistente
+/// va comunque contato, altrimenti si potrebbero sondare le email libere
+/// senza limiti.
+model TentativoAccesso {
+  id        String   @id @default(cuid())
+  email     String
+  utenteId  String?
+  utente    User?    @relation(fields: [utenteId], references: [id], onDelete: Cascade)
+  riuscito  Boolean
+  ip        String?
+  agente    String?
+  quando    DateTime @default(now())
+
+  @@index([email, quando])
+  @@index([ip, quando])
+}
+
+model AuthIdentity {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// password | google | apple | microsoft
+  provider       String
+  /// Identificativo presso il provider. Per `password` e l'email.
+  providerUserId String
+  /// Valorizzato solo per `password`. Gli altri provider non ci danno segreti.
+  passwordHash   String?
+  /// Dati utili al riconoscimento, come li manda il provider. Testo: su
+  /// PostgreSQL diventera JSONB.
+  profiloJson    String?
+  ultimoUsoIl    DateTime?
+  creatoIl       DateTime @default(now())
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+}
+
+model Token {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tipo      String   // verifica | reset | refresh
+  valore    String   @unique
+  scadeIl   DateTime
+  usatoIl   DateTime?
+  creatoIl  DateTime @default(now())
+  @@index([userId, tipo])
+}
+
+/// La persona e un'entita nostra, stabile nel tempo: senza, le statistiche
+/// cross-partita non sono calcolabili. Vedi docs/04.
+model Person {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  cognome     String
+  nome        String
+  dataNascita DateTime?
+  /// Stile della libreria di avatar (es. `adventurer`, `personas`).
+  /// Nullo: si usa lo stile predefinito.
+  avatarStile String?
+  /// La fotografia, se c'e. Ha la precedenza sull'avatar disegnato.
+  foto        PersonaFoto?
+
+  /// Seme da cui la libreria disegna la faccia. Nullo: si deriva dal nome,
+  /// cosi l'avatar c'e comunque ed e sempre lo stesso per quella persona.
+  avatarSeme  String?
+  creatoIl    DateTime @default(now())
+
+  teamPlayers  TeamPlayer[]
+  matchPlayers MatchPlayer[]
+  @@index([ownerId])
+}
+
+/// La fotografia di una persona.
+///
+/// **In tabella separata, e non una colonna su `Person`.** I byte
+/// dell'immagine non devono viaggiare con l'anagrafica: l'elenco delle
+/// persone e 55 KB e finisce in locale su ogni dispositivo, mentre le foto
+/// si prendono una alla volta e solo quando si guardano. Una colonna su
+/// `Person` prima o poi finirebbe dentro una `findMany()` distratta, e
+/// quell'elenco diventerebbe di megabyte senza che nessuno se ne accorga.
+///
+/// Nel database e non su disco perche a questa dimensione (~20 KB, ritagliate
+/// dal client a 256 px) i file sparsi costerebbero piu di quanto rendano:
+/// finiscono nel backup, non si orfanizzano, non serve un secondo deposito.
+/// I video sono un'altra storia e stanno altrove.
+model PersonaFoto {
+  personId     String   @id
+  person       Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+  dati         Bytes
+  tipo         String   // image/jpeg | image/png | image/webp
+  byte         Int
+  /// Serve da versione per la cache del browser: cambia, cambia l'indirizzo.
+  aggiornataIl DateTime @default(now())
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  nome      String
+  stagione  String
+  creatoIl  DateTime @default(now())
+
+  giocatori   TeamPlayer[]
+  shares      TeamShare[]
+  matchesHome Match[] @relation("HomeTeam")
+  matchesAway Match[] @relation("AwayTeam")
+  @@index([ownerId])
+}
+
+model TeamPlayer {
+  id           String  @id @default(cuid())
+  teamId       String
+  team         Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  personId     String?
+  person       Person? @relation(fields: [personId], references: [id])
+  numeroMaglia Int
+  cognome      String
+  nome         String
+  ruolo        String?
+  libero       Boolean @default(false)
+  @@unique([teamId, numeroMaglia])
+}
+
+model TeamShare {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  statoInvito String @default("attivo")  // attivo | pendente
+  creatoIl  DateTime @default(now())
+  @@unique([teamId, email])
+}
+
+model Competition {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  nome        String
+  stagione    String
+  descrizione String?
+  dataInizio  DateTime?
+  dataFine    DateTime?
+  creatoIl    DateTime @default(now())
+
+  matches Match[]
+  shares  CompetitionShare[]
+  @@index([ownerId])
+}
+
+model CompetitionShare {
+  id            String   @id @default(cuid())
+  competitionId String
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email         String
+  statoInvito   String   @default("attivo")
+  creatoIl      DateTime @default(now())
+  @@unique([competitionId, email])
+}
+
+model Match {
+  id            String   @id @default(cuid())
+  competitionId String
+  competition   Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  homeTeamId    String
+  homeTeam      Team     @relation("HomeTeam", fields: [homeTeamId], references: [id])
+  awayTeamId    String
+  awayTeam      Team     @relation("AwayTeam", fields: [awayTeamId], references: [id])
+  createdById   String
+  createdBy     User     @relation("MatchCreator", fields: [createdById], references: [id])
+
+  data      DateTime
+  citta     String?
+  campo     String?
+  arbitri   String?
+  /// Tag liberi, non strutturati. JSON serializzato: su PostgreSQL diventa JSONB.
+  tagJson   String   @default("[]")
+
+  /// Quanti set ha avuto la partita. Lo dichiara l'utente al momento di
+  /// inserire le formazioni: la partita e gia stata giocata, quindi si sa.
+  numeroSet        Int?
+  stato            String   @default("WAITING")
+  statoAggiornatoIl DateTime @default(now())
+  erroreMessaggio  String?
+  revisioneAnalisi Int?
+  creatoIl         DateTime @default(now())
+
+  video         Video[]
+  giocatori     MatchPlayer[]
+  formazioni    Lineup[]
+  sostituzioni  Substitution[]
+  notifiche     Notification[]
+  analisi       Analysis?
+  lavorazioni   Lavorazione[]
+  @@index([competitionId])
+  @@index([stato])
+}
+
+model MatchPlayer {
+  id           String  @id @default(cuid())
+  matchId      String
+  match        Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  personId     String?
+  person       Person? @relation(fields: [personId], references: [id])
+  lato         String  // h | a
+  numeroMaglia Int
+  cognome      String
+  nome         String
+  ruolo        String?
+  libero       Boolean @default(false)
+  capitano     Boolean @default(false)
+  @@unique([matchId, lato, numeroMaglia])
+}
+
+model Lineup {
+  id       String @id @default(cuid())
+  matchId  String
+  match    Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  set      Int
+  lato     String
+  pos1     Int?
+  pos2     Int?
+  pos3     Int?
+  pos4     Int?
+  pos5     Int?
+  pos6     Int?
+  libero1  Int?
+  libero2  Int?
+  primoServizio Boolean @default(false)
+  @@unique([matchId, set, lato])
+}
+
+model Substitution {
+  id       String @id @default(cuid())
+  matchId  String
+  match    Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  set      Int
+  lato     String
+  esce     Int
+  entra    Int
+  frame    Int?
+  minuto   Int?
+  creatoIl DateTime @default(now())
+  @@index([matchId, set])
+}
+
+model Video {
+  id         String   @id @default(cuid())
+  matchId    String
+  match      Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  lato       Int      // 1 | 2
+  stato      String   @default("ASSENTE")
+  nomeFile   String?
+  mime       String?
+  dimensione BigInt?
+  checksum   String?
+  storageKey String?
+  /// Chiave del video normalizzato restituito dal fornitore, quando arrivera.
+  normalizedKey String?
+  fps        Float?
+  frameCount Int?
+  caricatoIl DateTime?
+  @@unique([matchId, lato])
+  upload UploadSession?
+}
+
+/// Sessione di caricamento riprendibile. Vedi docs/03.
+model UploadSession {
+  id          String   @id @default(cuid())
+  videoId     String   @unique
+  video       Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  nomeFile    String
+  mime        String
+  dimensione  BigInt
+  bytesRicevuti BigInt @default(0)
+  chunkBytes  Int
+  stato       String   @default("in_corso")  // in_corso | completata | fallita | scaduta
+  storageKey  String
+  scadeIl     DateTime
+  creatoIl    DateTime @default(now())
+  aggiornatoIl DateTime @updatedAt
+}
+
+/// Una richiesta di analisi presso il fornitore.
+/// Lo stato sta qui e non in memoria: un riavvio non perde le elaborazioni
+/// in corso, e si vede sempre cosa sta succedendo.
+model Lavorazione {
+  id            String   @id @default(cuid())
+  matchId       String
+  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  richiedenteId String
+  fornitore     String
+  /// Riferimento dell'elaborazione presso il fornitore.
+  riferimento   String
+  stato         String   @default("in_corso")  // in_corso | conclusa | fallita
+  attesoPer     DateTime?
+  messaggio     String?
+  conclusaIl    DateTime?
+  creatoIl      DateTime @default(now())
+  @@index([stato])
+  @@index([matchId])
+}
+
+/// Pacchetto di analisi in formato canonico.
+/// Gli eventi (piccoli) stanno qui; le posizioni (grandi) su file, referenziate:
+/// gli eventi sono il 10% del peso e il 100% delle statistiche.
+model Analysis {
+  id            String   @id @default(cuid())
+  matchId       String   @unique
+  match         Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  revision      Int
+  pacchettoJson String
+  qualitaJson   String
+  framesKey     String?
+  creatoIl      DateTime @default(now())
+  aggiornatoIl  DateTime @updatedAt
+}
+
+model Notification {
+  id       String   @id @default(cuid())
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchId  String?
+  match    Match?   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  tipo     String   // partita_pronta
+  vistaIl  DateTime?
+  creatoIl DateTime @default(now())
+  @@index([userId, vistaIl])
+}
+
+/// Registro delle operazioni amministrative e sui dati personali.
+/// Sola lettura: nessuna modifica ne cancellazione. Vedi docs/08 S-33.
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorId     String?
+  actor       User?    @relation("AuditActor", fields: [actorId], references: [id])
+  azione      String
+  oggettoTipo String?
+  oggettoId   String?
+  dettaglio   String?
+  creatoIl    DateTime @default(now())
+  @@index([creatoIl])
+}

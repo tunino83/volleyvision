@@ -1,0 +1,1032 @@
+/* ============================================================================
+   VOLLEY VISION — sistema di stile
+   ----------------------------------------------------------------------------
+   Riferimento: le GRAFICHE DA TELECRONACA, non le dashboard aziendali.
+
+   Tre scelte portano tutto il carattere, e vanno capite prima di toccare:
+
+   1. TIPOGRAFIA CONDENSATA. Titoli, numeri ed etichette in Barlow Condensed,
+      maiuscolo, spaziato. E la scrittura dei tabelloni. Il testo corrente resta
+      in Inter, perche li serve leggerlo, non riconoscerlo.
+   2. NUMERI PROTAGONISTI. Punteggi e statistiche sono grandi, tabulari,
+      condensati. In uno sport il numero e il contenuto, non un dettaglio.
+   3. IL CAMPO COME STRUTTURA. Sfondo scuro da palazzetto, linee di campo
+      accennate, e ovunque compaiano due squadre la disposizione e un CONFRONTO
+      con le barre colore, non due righe di elenco.
+
+   Il tema scuro e il predefinito: e cosi che si guardano gli sport. Ma il
+   chiaro non e un ripiego: **tutto** cambia, navigazione compresa. Cio che si
+   adatta e il colore — `--palla` passa da oro pieno a oro brunito — non il
+   fondo di qualche zona che resta com'era.
+   Vedi docs/10-restyling-e-responsive.md.
+   ========================================================================== */
+
+:root {
+  --f-display: "Barlow Condensed", "Oswald", "Arial Narrow", system-ui, sans-serif;
+  --f-testo: "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+
+  --t-mega: 34px;
+  --t-titolo: 22px;
+  --t-corpo: 15px;
+  --t-piccolo: 13px;
+  --t-etichetta: 11px;
+  --t-numero: 30px;
+
+  --sp1: 4px;  --sp2: 8px;  --sp3: 12px; --sp4: 16px;
+  --sp5: 24px; --sp6: 32px; --sp7: 48px;
+
+  --r: 4px;              /* angoli quasi vivi: le grafiche sportive non sono morbide */
+  --r-piccolo: 3px;
+  --r-tondo: 999px;
+  --barra: 260px;        /* larghezza della colonna di navigazione */
+
+  /* Colori d'identita. `--palla` e l'oro del pallone: **cambia valore fra i
+     due temi ma non cambia identita**, perche il giallo acceso che brilla sul
+     nero sparisce sulla carta chiara. E il colore a doversi adattare, non il
+     fondo a restare scuro. Definito piu sotto, tema per tema. */
+  --casa: #3d8bfd;
+  --ospite: #ff8c42;
+
+  font-family: var(--f-testo);
+  font-size: var(--t-corpo);
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------- scuro (predefinito) */
+:root, :root[data-tema="scuro"] {
+  color-scheme: dark;
+  --palla: #ffcc00;               /* pieno, sul nero del palazzetto */
+  --primario: #ffcc00;            /* l'accento e il giallo del pallone, non un blu */
+  --primario-scuro: #e0b400;
+  --su-primario: #14181f;
+
+  --successo: #35d07f;
+  --attenzione: #ffb020;
+  --pericolo: #ff5f56;
+
+  --inchiostro: #eef3fa;
+  --inchiostro-tenue: #b6c2d2;
+  --muto: #7a8798;
+
+  --sfondo: #080c12;
+  --sfondo-alt: #0e141d;
+  --carta: #111823;
+  --carta-alt: #161f2b;
+  --bordo: #1e2937;
+  --bordo-forte: #2c3a4c;
+
+  --terreno: #15202c;
+  --terreno-linea: #2a3a4d;
+
+  --ombra: 0 1px 0 rgba(255, 255, 255, .03), 0 8px 24px rgba(0, 0, 0, .45);
+  --ombra-alta: 0 1px 0 rgba(255, 255, 255, .05), 0 18px 44px rgba(0, 0, 0, .6);
+  --velo-info: rgba(61, 139, 253, .12);
+  --velo-attenzione: rgba(255, 176, 32, .12);
+  --velo-pericolo: rgba(255, 95, 86, .12);
+  --velo-successo: rgba(53, 208, 127, .12);
+}
+
+/* ------------------------------------------- chiaro: il referto su carta */
+:root[data-tema="chiaro"] {
+  color-scheme: light;
+  --palla: #b07d00;               /* oro brunito: lo stesso colore, leggibile sulla carta */
+  --primario: #14304f;
+  --primario-scuro: #0b1f36;
+  --su-primario: #ffffff;
+
+  --successo: #14764a;
+  --attenzione: #9a6206;
+  --pericolo: #b02a20;
+
+  --inchiostro: #0d1620;
+  --inchiostro-tenue: #34435a;
+  --muto: #63728a;
+
+  --sfondo: #eeeae2;              /* carta calda, non bianco da ufficio */
+  --sfondo-alt: #e3ded3;
+  --carta: #fbfaf7;
+  --carta-alt: #f2efe8;
+  --bordo: #d5cec1;
+  --bordo-forte: #b9b0a0;
+
+  --terreno: #e8dcc4;
+  --terreno-linea: #c8b795;
+
+  --ombra: 0 1px 2px rgba(40, 30, 10, .06), 0 6px 18px rgba(40, 30, 10, .05);
+  --ombra-alta: 0 2px 6px rgba(40, 30, 10, .09), 0 16px 36px rgba(40, 30, 10, .1);
+  --velo-info: #dfe9f6;
+  --velo-attenzione: #f9edd4;
+  --velo-pericolo: #f7dfdc;
+  --velo-successo: #ddefe4;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  color: var(--inchiostro);
+  background: var(--sfondo);
+  line-height: 1.55;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Le linee del campo dietro l'applicazione: due diagonali e il bagliore dei
+   fari. Si notano solo cercandole, ed e quello che devono fare. */
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 38%,
+      color-mix(in srgb, var(--palla) 5%, transparent) 38.4%,
+      color-mix(in srgb, var(--palla) 5%, transparent) 39%, transparent 39.4%),
+    linear-gradient(115deg, transparent 62%,
+      color-mix(in srgb, var(--casa) 7%, transparent) 62.4%,
+      color-mix(in srgb, var(--casa) 7%, transparent) 63%, transparent 63.4%),
+    radial-gradient(900px 500px at 78% -10%, color-mix(in srgb, var(--casa) 10%, transparent), transparent 65%);
+}
+
+/* ------------------------------------------------------------- tipografia */
+h1, h2, h3, .display {
+  font-family: var(--f-display);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+  line-height: 1.08;
+}
+h1 { font-size: var(--t-mega); margin: 0 0 var(--sp4); }
+h2 { font-size: var(--t-titolo); margin: var(--sp5) 0 var(--sp3); }
+h3 { font-size: 17px; margin: var(--sp4) 0 var(--sp2); }
+
+/* Il filo giallo sotto il titolo: e la linea di fondo campo. */
+h1::after {
+  content: ""; display: block; width: 46px; height: 3px;
+  background: var(--palla); margin-top: var(--sp2);
+}
+
+a { color: var(--primario); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.muto { color: var(--muto); }
+.piccolo { font-size: var(--t-piccolo); }
+.grassetto { font-weight: 650; }
+.numerico { font-variant-numeric: tabular-nums; font-family: var(--f-display); }
+.etichetta, th {
+  font-family: var(--f-display);
+  font-size: var(--t-etichetta);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-weight: 600;
+  color: var(--muto);
+}
+/* Il numero grande: punteggi e statistiche, quanto va letto da lontano. */
+.cifra {
+  font-family: var(--f-display); font-weight: 700;
+  font-size: var(--t-numero); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ================================================== impianto a due colonne */
+.guscio { display: flex; min-height: 100vh; }
+
+/*
+ * La colonna segue il tema come tutto il resto. Un interruttore che lascia
+ * mezza schermata com'era sembra rotto, per quanto la scelta sia meditata.
+ * Si distingue dal contenuto con il fondo (`--sfondo-alt`) e il bordo, non
+ * restando di un colore suo.
+ */
+.barra-laterale {
+  width: var(--barra); flex: none;
+  background: var(--sfondo-alt);
+  border-right: 1px solid var(--bordo);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.barra-laterale .marchio { padding: var(--sp5) var(--sp5) var(--sp4); }
+.barra-laterale nav { display: flex; flex-direction: column; gap: 2px; padding: 0 var(--sp3); }
+.barra-laterale .coda { margin-top: auto; padding: var(--sp4) var(--sp3) var(--sp5); }
+
+.area { flex: 1; min-width: 0; }
+.contenitore { max-width: 1180px; margin: 0 auto; padding: var(--sp6) var(--sp6) var(--sp7); }
+
+/* Esistono solo su schermo stretto */
+.barra-alta { display: none; }
+.nav-basso { display: none; }
+
+/* ------------------------------------------------------------- navigazione */
+.nav a {
+  display: flex; align-items: center; gap: var(--sp3);
+  padding: 11px var(--sp3);
+  color: var(--muto); font-weight: 600; font-size: 14px;
+  border-radius: var(--r); position: relative;
+  border-left: 3px solid transparent;
+  text-decoration: none;
+}
+.nav a:hover { color: var(--inchiostro); background: var(--carta); text-decoration: none; }
+.nav a.attivo {
+  color: var(--inchiostro); background: var(--carta);
+  border-left-color: var(--palla);
+}
+.nav a.attivo svg { color: var(--palla); }
+
+.marchio { display: inline-flex; align-items: center; gap: var(--sp3); }
+.marchio-palla { color: var(--palla); display: inline-flex; }
+.marchio-nome {
+  font-family: var(--f-display); font-size: 22px; line-height: 1;
+  letter-spacing: .06em; text-transform: uppercase; white-space: nowrap;
+}
+.marchio-nome b { color: var(--inchiostro); font-weight: 800; }
+.marchio-nome span { color: var(--palla); font-weight: 600; }
+
+/* ------------------------------------------------------------------ schede */
+.carta {
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: var(--r);
+  padding: var(--sp4);
+  box-shadow: var(--ombra);
+}
+.carta-cliccabile { cursor: pointer; transition: border-color .12s, box-shadow .12s, transform .12s; }
+.carta-cliccabile:hover {
+  border-color: var(--bordo-forte); box-shadow: var(--ombra-alta); transform: translateY(-1px);
+}
+
+/* -------------------------------------------------------------- struttura */
+.riga { display: flex; gap: var(--sp3); align-items: center; flex-wrap: wrap; }
+.riga-sp { display: flex; gap: var(--sp3); align-items: center;
+           justify-content: space-between; flex-wrap: wrap; }
+.colonna { display: flex; flex-direction: column; gap: var(--sp3); }
+.spazio { flex: 1; }
+.griglia { display: grid; gap: var(--sp4); grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.griglia-due { display: grid; gap: var(--sp4); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+/* ----------------------------------------------------------------- comandi */
+button, .bottone {
+  font-family: var(--f-display); font-size: 14px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em;
+  padding: 9px 16px; border-radius: var(--r);
+  border: 1px solid var(--bordo-forte);
+  background: transparent; color: var(--inchiostro-tenue);
+  cursor: pointer; display: inline-flex; align-items: center; gap: var(--sp2);
+  transition: background .12s, border-color .12s, color .12s;
+}
+button:hover:not(:disabled) { border-color: var(--palla); color: var(--inchiostro); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--palla); outline-offset: 2px;
+}
+button.primario {
+  background: var(--primario); border-color: var(--primario);
+  color: var(--su-primario); font-weight: 700;
+}
+button.primario:hover:not(:disabled) { background: var(--primario-scuro); border-color: var(--primario-scuro); }
+button.pericolo { color: var(--pericolo); border-color: var(--pericolo); }
+button.pericolo:hover:not(:disabled) { background: var(--velo-pericolo); color: var(--pericolo); }
+button.piccolo { padding: 5px 10px; font-size: 12px; letter-spacing: .05em; }
+button.icona-solo { padding: 9px; color: var(--muto); border-color: transparent; }
+button.icona-solo:hover:not(:disabled) { color: var(--palla); background: var(--carta); }
+
+/* ------------------------------------------------------------------- campi */
+input, select, textarea {
+  font-family: var(--f-testo); font-size: var(--t-corpo);
+  padding: 9px 11px;
+  border: 1px solid var(--bordo-forte); border-radius: var(--r);
+  background: var(--sfondo); color: var(--inchiostro); width: 100%;
+}
+input::placeholder { color: var(--muto); }
+input:disabled { background: var(--sfondo-alt); color: var(--muto); }
+input:focus, select:focus, textarea:focus { border-color: var(--palla); outline: none; }
+input.errato { border-color: var(--pericolo); }
+label {
+  display: block; font-family: var(--f-display); font-size: var(--t-etichetta);
+  text-transform: uppercase; letter-spacing: .1em; font-weight: 600;
+  color: var(--muto); margin-bottom: 5px;
+}
+.campo { margin-bottom: var(--sp3); }
+.errore-campo { color: var(--pericolo); font-size: 12px; margin-top: var(--sp1); }
+
+/* ---------------------------------------------------------------- tabelle */
+.tabella-scorrevole { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; padding: var(--sp2) var(--sp3);
+     border-bottom: 1px solid var(--bordo-forte); white-space: nowrap; }
+td { padding: 11px var(--sp3); border-bottom: 1px solid var(--bordo); }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--carta-alt); }
+
+/* ============================================ il confronto fra due squadre */
+/* Ovunque ci siano due squadre la disposizione e un incontro: barra colore,
+   nome, e in mezzo il punteggio. Non due righe di elenco. */
+.incontro { display: grid; grid-template-columns: 1fr auto 1fr; gap: var(--sp3); align-items: center; }
+.incontro .lato { display: flex; align-items: center; gap: var(--sp2); min-width: 0; }
+.incontro .lato.destra { flex-direction: row-reverse; text-align: right; }
+/* I nomi veri delle societa portano la citta e sono lunghi: "Pallavolo
+   Senigallia" non sta su una riga in una colonna stretta. Vanno a capo invece
+   di essere troncati — un nome mozzato non si riconosce. */
+.incontro .nome {
+  font-family: var(--f-display); font-size: 17px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .03em;
+  line-height: 1.08; overflow-wrap: anywhere;
+}
+.incontro .fascia { width: 4px; align-self: stretch; min-height: 26px; border-radius: 2px; flex: none; }
+.incontro .fascia.casa { background: var(--casa); }
+.incontro .fascia.ospite { background: var(--ospite); }
+.incontro .parziali {
+  font-family: var(--f-display); font-weight: 700; font-size: 15px;
+  font-variant-numeric: tabular-nums; color: var(--muto);
+  letter-spacing: .04em; white-space: nowrap;
+}
+
+/* ------------------------------------------------------------- indicatori */
+.pillola {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: var(--r-piccolo);
+  font-family: var(--f-display); font-size: 12px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .08em;
+  border: 1px solid; background: transparent;
+}
+.pillola::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.pillola.attesa { color: var(--muto); border-color: var(--bordo-forte); }
+.pillola.corso { color: var(--attenzione); border-color: var(--attenzione); background: var(--velo-attenzione); }
+.pillola.pronta { color: var(--successo); border-color: var(--successo); background: var(--velo-successo); }
+.pillola.errore { color: var(--pericolo); border-color: var(--pericolo); background: var(--velo-pericolo); }
+
+.punto { width: 9px; height: 9px; border-radius: 2px; display: inline-block; flex: none; }
+.punto.casa { background: var(--casa); }
+.punto.ospite { background: var(--ospite); }
+
+.badge {
+  background: var(--palla); color: #fffdf5; border-radius: var(--r-piccolo);
+  padding: 0 6px; font-family: var(--f-display); font-size: 12px;
+  font-weight: 700; margin-left: var(--sp1);
+}
+
+.avviso {
+  border-radius: var(--r); padding: var(--sp3) var(--sp4);
+  margin: var(--sp3) 0; border: 1px solid var(--bordo);
+  border-left: 3px solid;
+}
+.avviso.info { background: var(--velo-info); border-left-color: var(--casa); }
+.avviso.attenzione { background: var(--velo-attenzione); border-left-color: var(--attenzione); }
+.avviso.errore { background: var(--velo-pericolo); border-left-color: var(--pericolo); }
+.avviso.successo { background: var(--velo-successo); border-left-color: var(--successo); }
+
+.vuoto { text-align: center; padding: var(--sp7) var(--sp5); color: var(--muto); }
+.vuoto .palla-vuoto { color: var(--bordo-forte); margin-bottom: var(--sp3);
+                      display: block; margin-inline: auto; }
+
+.barra { height: 8px; background: var(--sfondo-alt); border-radius: 2px; overflow: hidden; }
+.barra > div { height: 100%; transition: width .3s ease; }
+
+/* --------------------------------------------------------- campo da gioco */
+.campo-terreno {
+  background: var(--terreno);
+  border: 1px solid var(--terreno-linea);
+  border-radius: var(--r);
+  padding: var(--sp3);
+  position: relative;
+}
+/* La linea dei tre metri, dove sta davvero */
+.campo-terreno::after {
+  content: ""; position: absolute; left: var(--sp3); right: var(--sp3);
+  top: 52%; height: 1px; background: var(--terreno-linea); opacity: .8;
+}
+.campo-diagramma { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp2); }
+.campo-diagramma + .campo-diagramma { margin-top: var(--sp2); }
+.posizione {
+  border: 1px solid var(--bordo); border-radius: var(--r-piccolo);
+  padding: var(--sp2); background: var(--carta);
+  min-height: 82px; text-align: center;
+}
+.rete {
+  height: 9px; margin: 0 0 4px;
+  background: repeating-linear-gradient(90deg, var(--terreno-linea) 0 1px, transparent 1px 5px),
+              repeating-linear-gradient(0deg, var(--terreno-linea) 0 1px, transparent 1px 5px);
+  border-top: 2px solid var(--inchiostro-tenue);
+}
+.rete-testo {
+  font-family: var(--f-display); font-size: var(--t-etichetta);
+  color: var(--muto); text-align: center; margin-bottom: var(--sp2);
+  letter-spacing: .2em; text-transform: uppercase;
+}
+
+/* ------------------------------------------------------- schermate di accesso */
+.ingresso { text-align: center; }
+.ingresso .ingresso-palla { color: var(--palla); display: block; margin: 0 auto var(--sp4); }
+.ingresso h1::after { margin-inline: auto; }
+.ingresso form, .ingresso .carta { text-align: left; }
+
+/* ============================================================== grafici */
+/*
+ * Disegnati a mano, e tutti con lo stesso principio: **nessun grafico senza il
+ * numero accanto**. Una barra dice "tanto" o "poco", il numero dice quanto.
+ */
+
+/* Scheda persona: il volto accanto al nome, non sopra. */
+.scheda-testa { display: flex; align-items: center; gap: var(--sp4); margin-bottom: var(--sp4); }
+.scheda-volto { border: 2px solid var(--bordo); background: var(--carta-alt); flex: none; }
+.scheda-testa h1::after { display: none; }
+
+/* I numeri che si guardano per primi */
+.cifre { display: grid; gap: var(--sp3); margin: var(--sp4) 0;
+         grid-template-columns: repeat(auto-fit, minmax(112px, 1fr)); }
+.cifre .carta { text-align: center; padding: var(--sp3); }
+
+/* Distribuzione: una barra sola divisa, non una torta. Le torte si
+   confrontano male fra loro, e qui il confronto e il punto. */
+.barra-divisa { display: flex; width: 100%; border-radius: 2px; overflow: hidden;
+                background: var(--sfondo-alt); }
+.barra-divisa > span { display: block; height: 100%; }
+.legenda { display: flex; flex-wrap: wrap; gap: var(--sp3); margin-top: var(--sp3); }
+.voce-legenda { display: inline-flex; align-items: center; gap: 5px;
+                font-size: var(--t-piccolo); color: var(--muto); }
+.voce-legenda b { color: var(--inchiostro); font-family: var(--f-display); }
+.pastiglia { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+
+/* Colonne: una per partita. Non una spezzata — fra due partite non esistono
+   valori intermedi, e una linea lo suggerirebbe. */
+.grafico-colonne { display: flex; flex-direction: column; }
+.colonne { display: flex; align-items: flex-end; gap: 6px; position: relative; }
+/*
+ * `colonna-grafico`, non `colonna`.
+ *
+ * La prima versione usava `.colonna`, che e gia l'utilita di impaginazione a
+ * colonna: la regola del grafico l'ha sovrascritta in TUTTA l'applicazione, e
+ * l'elenco partite si e ristretto alla larghezza del testo. In un foglio di
+ * stile globale i nomi generici sono una trappola: qui si nominano le cose per
+ * il posto in cui vivono.
+ */
+.colonna-grafico { flex: 1; display: flex; flex-direction: column; justify-content: flex-end;
+                   align-items: center; height: 100%; min-width: 0; }
+.colonna-grafico .asta { width: 100%; max-width: 42px; border-radius: 2px 2px 0 0; }
+.colonna-grafico.assente { opacity: .3; }
+.valore-colonna { font-size: 11px; color: var(--muto); margin-bottom: 3px; white-space: nowrap; }
+/* La media risponde alla domanda che ci si fa davvero: sopra o sotto il solito? */
+.riga-media { position: absolute; left: 0; right: 0; height: 0;
+              border-top: 1px dashed var(--bordo-forte); pointer-events: none; }
+.riga-zero { position: absolute; left: 0; right: 0; height: 0;
+             border-top: 1px solid var(--bordo-forte); }
+.etichette-colonne { display: flex; gap: 6px; margin-top: 6px; }
+.etichette-colonne > span {
+  flex: 1; text-align: center; min-width: 0;
+  font-family: var(--f-display); font-size: 10px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muto);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Righe: confronto fra poche voci, con la barra proporzionata */
+.grafico-righe { display: flex; flex-direction: column; gap: 7px; }
+.riga-grafico { display: grid; grid-template-columns: 80px minmax(0, 1fr) 40px;
+                align-items: center; gap: var(--sp2); }
+.etichetta-riga { font-size: var(--t-piccolo); color: var(--muto); }
+.asta-riga { height: 14px; background: var(--sfondo-alt); border-radius: 2px; overflow: hidden; }
+.asta-riga > span { display: block; height: 100%; border-radius: 2px; }
+.valore-riga { text-align: right; font-weight: 700; }
+
+@media (max-width: 620px) {
+  .scheda-testa { gap: var(--sp3); }
+  .riga-grafico { grid-template-columns: 66px minmax(0, 1fr) 34px; }
+}
+
+/* ================================================= banco di analisi video */
+/*
+ * Video a sinistra, azioni a destra. Sotto il video l'elenco costringerebbe a
+ * scorrere per scegliere e a tornare su per guardare: si perde il posto a ogni
+ * azione. E l'elenco scorre per conto suo, altrimenti scegliere un'azione
+ * riporterebbe la pagina al punto di partenza.
+ */
+.banco { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--sp4); align-items: start; }
+.banco-video { min-width: 0; }
+.lettore { width: 100%; display: block; border-radius: var(--r); background: #000; }
+
+.banco-azioni {
+  background: var(--carta); border: 1px solid var(--bordo); border-radius: var(--r);
+  box-shadow: var(--ombra);
+  display: flex; flex-direction: column;
+  /* Alto quanto lo schermo, non quanto l'elenco: e una colonna, non una pagina. */
+  max-height: calc(100vh - 200px); min-height: 300px;
+  position: sticky; top: var(--sp4);
+}
+.banco-azioni-testa {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp2);
+  padding: var(--sp3); border-bottom: 1px solid var(--bordo); flex: none;
+}
+.banco-azioni-testa .piccolo { padding: 3px 8px; min-width: 26px; justify-content: center; }
+.banco-azioni-elenco { overflow-y: auto; padding: var(--sp2); }
+
+.azione { padding: var(--sp2); border-bottom: 1px solid var(--bordo); }
+.azione:last-child { border-bottom: none; }
+.azione-testa { display: flex; align-items: center; justify-content: space-between; gap: var(--sp2); }
+.azione-eventi { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 5px; }
+
+/* Il singolo tocco: sigla del fondamentale e maglia. Compatto di proposito —
+   in una colonna stretta il nome esteso ridurrebbe tutto a due tocchi per riga. */
+.tocco {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 6px; min-height: 0; border-radius: var(--r-piccolo);
+  border: 1px solid var(--bordo); background: transparent;
+  font-family: var(--f-display); font-size: 11px; letter-spacing: .04em;
+  color: var(--muto);
+}
+.tocco:hover:not(:disabled) { border-color: var(--palla); color: var(--inchiostro); }
+/* Chi ha chiuso lo scambio si distingue: e quello che si cerca. */
+.tocco.esito { color: var(--inchiostro); border-color: var(--bordo-forte); }
+.tocco-skill { font-weight: 700; }
+.tocco-maglia { color: var(--palla); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 980px) {
+  .banco { grid-template-columns: 1fr; }
+  .banco-azioni { position: static; max-height: 420px; }
+}
+
+/* ==================================================== album di figurine */
+/*
+ * Il roster non e un foglio elettronico: e un gruppo di persone. Volto,
+ * numero grande, cognome. Le informazioni sono le stesse della tabella, il
+ * modo di leggerle no.
+ */
+.album {
+  display: grid; gap: var(--sp3);
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  margin-bottom: var(--sp5);
+}
+
+.figurina {
+  position: relative;
+  background: var(--carta);
+  border: 1px solid var(--bordo);
+  border-radius: var(--r);
+  padding: var(--sp4) var(--sp3) var(--sp3);
+  text-align: center;
+  box-shadow: var(--ombra);
+  transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+  /* La banda in alto e la fascia della maglia: da sola dice "sport". */
+  background-image: linear-gradient(var(--casa), var(--casa));
+  background-size: 100% 3px;
+  background-repeat: no-repeat;
+  background-position: top;
+}
+.figurina:hover { transform: translateY(-2px); border-color: var(--bordo-forte);
+                  box-shadow: var(--ombra-alta); }
+.figurina.libero { background-image: linear-gradient(var(--ospite), var(--ospite)); }
+
+/* Il numero e il tratto che si riconosce da lontano: sta dietro, grande. */
+.figurina-numero {
+  position: absolute; top: 6px; right: 10px;
+  font-family: var(--f-display); font-weight: 800; font-size: 40px;
+  line-height: 1; color: var(--inchiostro); opacity: .1;
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.figurina-volto {
+  margin: 0 auto var(--sp2);
+  background: var(--carta-alt);
+  border: 2px solid var(--bordo);
+}
+.figurina-nome {
+  font-family: var(--f-display); font-weight: 700; font-size: 16px;
+  text-transform: uppercase; letter-spacing: .03em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.figurina-sottonome { font-size: var(--t-piccolo); color: var(--muto); }
+.figurina-ruolo {
+  font-family: var(--f-display); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .12em; color: var(--muto);
+  margin-top: var(--sp2); padding-top: var(--sp2);
+  border-top: 1px solid var(--bordo);
+}
+/* Il collegamento alla persona, nella figurina: discreto, perche la figurina
+   intera serve gia ad aprire la modifica e due inviti alla pari confondono. */
+.figurina-scheda {
+  display: inline-block; margin-top: 6px;
+  font-family: var(--f-display); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .1em; color: var(--muto);
+}
+.figurina-scheda:hover { color: var(--palla); text-decoration: none; }
+
+.figurina-avviso {
+  margin-top: 6px; font-size: 10px; color: var(--attenzione);
+  font-family: var(--f-display); text-transform: uppercase; letter-spacing: .1em;
+}
+
+/*
+ * La figurina aperta NON e una figurina: e un modulo, e prende la riga intera.
+ * Dentro una cella larga come una figurina i campi si incolonnavano tutti e la
+ * scheda diventava altissima e storta. Due colonne: a sinistra cio che si
+ * guarda, a destra cio che si compila.
+ */
+.figurina.aperta {
+  grid-column: 1 / -1;
+  text-align: left; cursor: default;
+  border-color: var(--palla);
+  padding: var(--sp4);
+  background-image: linear-gradient(var(--palla), var(--palla));
+}
+.figurina.aperta:hover { transform: none; box-shadow: var(--ombra); }
+
+.modulo-intestazione {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp3); margin-bottom: var(--sp4);
+  padding-bottom: var(--sp2); border-bottom: 1px solid var(--bordo);
+}
+
+.modulo-corpo { display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: var(--sp5); }
+
+.modulo-volto { display: flex; flex-direction: column; align-items: center; gap: var(--sp2); }
+.modulo-volto > img { border: 2px solid var(--bordo); background: var(--carta-alt); }
+.modulo-facce { justify-content: center; gap: var(--sp2); }
+.modulo-nota { text-align: center; margin: 0; }
+
+.album-stili { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 100%; }
+.album-stili .stile {
+  padding: 3px; border-radius: var(--r-piccolo); min-height: 0;
+  border: 1px solid transparent; background: none;
+  display: flex; justify-content: center;
+}
+.album-stili .stile.scelto { border-color: var(--palla); background: var(--velo-attenzione); }
+
+/* I campi: larghezze proporzionate al contenuto, non tutte uguali. */
+.modulo-campi { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+.campi-riga { display: grid; gap: var(--sp3); align-items: start; }
+.campi-anagrafica { grid-template-columns: 66px minmax(0, 1fr) minmax(0, 1fr); }
+
+/*
+ * Il numero di maglia dentro la maglia.
+ *
+ * La forma fa da sfondo e il campo ci sta sopra, trasparente e centrato: si
+ * scrive **sulla maglia**, non accanto a un'etichetta che va interpretata.
+ * L'etichetta testuale sparisce perche sarebbe una ripetizione del disegno.
+ */
+.campo-maglia { position: relative; display: flex; justify-content: center; }
+.campo-maglia-forma {
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  /* Abbastanza marcata da leggersi come maglia, non tanto da competere col
+     numero, che resta la cosa da leggere. */
+  color: var(--bordo-forte); pointer-events: none;
+  /* NIENTE `transition: color` qui: su un <svg> il cui `fill` e `currentColor`
+     la transizione impedisce al colore di risolversi e lo stato di fuoco non
+     si vede mai. Il cambio istantaneo, per un fuoco, va benissimo. */
+}
+.campo-maglia input {
+  position: relative; z-index: 1;
+  /* Il numero sta sul corpo della maglia, non sulle spalle: un filo piu in
+     basso del centro geometrico. */
+  width: 62px; height: 62px; padding: 6px 0 0;
+  background: transparent; border: none;
+  text-align: center;
+  font-family: var(--f-display); font-weight: 800; font-size: 24px;
+  color: var(--inchiostro); font-variant-numeric: tabular-nums;
+  /* Le frecce del campo numerico romperebbero la forma della maglia. */
+  -moz-appearance: textfield; appearance: textfield;
+}
+.campo-maglia input::-webkit-outer-spin-button,
+.campo-maglia input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.campo-maglia input:focus { outline: none; }
+/* Il fuoco si vede sulla maglia, non su un rettangolo che non c'e. */
+.campo-maglia:focus-within .campo-maglia-forma { color: var(--palla); }
+.campo-maglia:focus-within input { color: var(--su-primario); }
+.campo-maglia .errore-campo { position: absolute; top: 100%; white-space: nowrap; }
+.campi-ruolo { grid-template-columns: 190px auto; align-items: center; }
+.campi-riga .campo { margin-bottom: var(--sp3); }
+
+/* La spunta si allinea al campo accanto, non all'etichetta sopra. */
+.spunta {
+  display: inline-flex; align-items: center; gap: var(--sp2);
+  font-size: var(--t-piccolo); color: var(--inchiostro);
+  white-space: nowrap; margin: 0; text-transform: none; letter-spacing: 0;
+  font-family: var(--f-testo); font-weight: 500;
+}
+.spunta input { width: auto; }
+
+.modulo-comandi { display: flex; gap: var(--sp3); margin-top: var(--sp2); }
+
+@media (max-width: 700px) {
+  .modulo-corpo { grid-template-columns: 1fr; gap: var(--sp4); }
+  .campi-anagrafica { grid-template-columns: 66px minmax(0, 1fr); }
+  .campi-anagrafica .campo:last-child { grid-column: 1 / -1; }
+  .campi-ruolo { grid-template-columns: 1fr; }
+}
+
+/* --------------------------------------------------------------- ritorno */
+/* Discreto ma sempre allo stesso posto: sopra il titolo, a sinistra. La
+   costanza della posizione conta piu della sua evidenza. */
+.indietro {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--f-display); font-size: 13px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .08em;
+  color: var(--muto); margin-bottom: var(--sp3);
+}
+.indietro:hover { color: var(--palla); text-decoration: none; }
+.indietro svg { transition: transform .12s ease; }
+.indietro:hover svg { transform: translateX(-2px); }
+
+/* ------------------------------------------------------------- tabellino */
+/* La cella e un comando ma non deve sembrare un pulsante: in una tabella
+   fitta venti bordi fanno piu rumore dei numeri. */
+.tabellino td, .tabellino th { padding: 7px 9px; }
+.tabellino .cella {
+  border: none; background: none; padding: 2px 4px; min-height: 0;
+  font-family: var(--f-display); font-size: 14px; font-weight: 600;
+  color: var(--inchiostro); letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.tabellino .cella:hover:not(:disabled) {
+  background: var(--carta-alt); color: var(--palla); border: none;
+}
+
+/* --------------------------------------------------- indicatore statistico */
+/* Il numero e grande ed e il comando: si tocca il 59 per vedere da dove viene,
+   non un pulsante di fianco al 59. */
+.indicatore {
+  display: grid; grid-template-columns: 92px minmax(0, 1fr) 92px;
+  align-items: center; gap: var(--sp3);
+  padding: var(--sp3) 0; border-bottom: 1px solid var(--bordo);
+}
+.indicatore:last-child { border-bottom: none; }
+.indicatore .mezzo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.indicatore .valore {
+  border: none; background: none; padding: 4px 6px; border-radius: var(--r);
+  justify-content: center; min-height: 0;
+}
+.indicatore .valore.casa { color: var(--casa); justify-self: start; }
+.indicatore .valore.ospite { color: var(--ospite); justify-self: end; }
+.indicatore .valore:hover:not(:disabled) { background: var(--carta-alt); }
+
+@media (max-width: 620px) {
+  .indicatore { grid-template-columns: 66px minmax(0, 1fr) 66px; gap: var(--sp2); }
+  .indicatore .valore { font-size: 22px; }
+}
+
+/* ------------------------------------------------- la riga di una partita */
+/* Quattro zone: quando, chi contro chi, come sta, e i tag sotto. Su schermo
+   stretto vanno a capo invece di cambiare impianto: una disposizione sola. */
+.partita-riga {
+  display: grid; align-items: center; gap: var(--sp3) var(--sp5);
+  grid-template-columns: 96px minmax(0, 1fr) auto;
+  border-left: 3px solid transparent;
+}
+.partita-riga:hover { border-left-color: var(--palla); }
+.partita-quando {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--f-display); font-size: 13px; font-weight: 600;
+  color: var(--muto); letter-spacing: .04em; white-space: nowrap;
+}
+.partita-coda { display: flex; align-items: center; gap: var(--sp4); justify-content: flex-end; flex: none; }
+.partita-coda .piccolo.muto { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.partita-tag { grid-column: 2 / -1; display: flex; gap: 6px; flex-wrap: wrap; }
+.etichetta-tag {
+  font-family: var(--f-display); font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .1em;
+  color: var(--muto); border: 1px solid var(--bordo); border-radius: var(--r-piccolo);
+  padding: 1px 7px;
+}
+
+/* Lo stato dei due video: due spie, non due pallini di testo */
+.spia { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none;
+        border: 1.5px solid var(--bordo-forte); }
+.spia.presente { background: var(--successo); border-color: var(--successo); }
+.spia.corso { background: var(--attenzione); border-color: var(--attenzione); }
+.spia.assente { background: transparent; }
+
+@media (max-width: 860px) {
+  .partita-riga { grid-template-columns: 1fr; gap: var(--sp3); }
+  .partita-coda { justify-content: flex-start; flex-wrap: wrap; }
+  .partita-tag { grid-column: 1; }
+}
+
+.elenco-schede { display: none; }
+.elenco-schede > * + * { margin-top: var(--sp3); }
+
+/* ======================================================== schermi stretti */
+@media (max-width: 1000px) {
+  :root { --barra: 76px; }
+  .barra-laterale .marchio-nome { display: none; }
+  .barra-laterale .marchio { padding: var(--sp5) 0; justify-content: center; }
+  .nav a { justify-content: center; padding: 12px 0; border-left: none;
+           border-bottom: 2px solid transparent; }
+  .nav a span { display: none; }
+  .nav a.attivo { border-left: none; border-bottom-color: var(--palla); }
+  .barra-laterale .coda { display: flex; flex-direction: column; align-items: center; gap: var(--sp2); }
+  .contenitore { padding: var(--sp5) var(--sp5) var(--sp7); }
+}
+
+@media (max-width: 900px) { .griglia-due { grid-template-columns: 1fr; } }
+
+@media (max-width: 760px) {
+  :root { --t-mega: 26px; --t-titolo: 19px; --t-numero: 24px; }
+
+  /* La colonna sparisce: in alto il marchio, in basso le voci dove arriva il
+     pollice. E la struttura che avra comunque la shell Capacitor. */
+  .barra-laterale { display: none; }
+  .guscio { display: block; }
+
+  .barra-alta, .nav-basso { background: var(--sfondo-alt); }
+  .barra-alta {
+    display: flex; align-items: center; gap: var(--sp3);
+    padding: 0 var(--sp4); height: 56px;
+    border-bottom: 1px solid var(--bordo);
+    position: sticky; top: 0; z-index: 20; overflow: hidden;
+  }
+  .contenitore { padding: var(--sp4) var(--sp4) 88px; }
+
+  .nav-basso {
+    display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+    border-top: 1px solid var(--bordo);
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    justify-content: space-around;
+  }
+  .nav-basso a {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    color: var(--muto); font-family: var(--f-display); font-size: 10px;
+    text-transform: uppercase; letter-spacing: .08em; font-weight: 600;
+    padding: 4px 6px; min-width: 54px; text-decoration: none;
+  }
+  .nav-basso a.attivo { color: var(--palla); }
+
+  .elenco-schede { display: block; }
+  .solo-largo { display: none; }
+  table { font-size: var(--t-piccolo); }
+  th, td { padding: var(--sp2); }
+}
+
+@media (max-width: 420px) { .barra-alta .marchio-nome { display: none; } }
+
+/* Le aree toccabili le decide il PUNTATORE, non la larghezza: un tablet largo
+   si tocca lo stesso, una finestra stretta col mouse no. */
+@media (pointer: coarse) {
+  button, .bottone, .nav a, .nav-basso a, input, select { min-height: 44px; }
+  button.piccolo { min-height: 44px; padding: 8px 12px; }
+  /* Va nominato: `.indicatore .valore` ha specificita maggiore di `button` e
+     senza questa riga il suo `min-height: 0` vincerebbe anche al tocco. */
+  .indicatore .valore { min-height: 44px; }
+  /* Stessa ragione: `.tabellino .cella` batte `button` per specificita. Le
+     righe del tabellino diventano piu alte al tocco, ed e corretto cosi. */
+  .tabellino .cella { min-height: 44px; }
+  .album-stili .stile { min-height: 44px; }
+  .tocco { min-height: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ============================================================
+   INSTALLAZIONE E ASSENZA DI RETE
+   ============================================================ */
+
+/* La striscia senza rete: informa, non allarma. Colore d'attenzione e non
+   d'errore — l'applicazione non e rotta, sta funzionando in lettura. */
+.striscia-senza-rete {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 9px 16px;
+  background: color-mix(in srgb, var(--attenzione) 16%, var(--sfondo));
+  border-bottom: 1px solid color-mix(in srgb, var(--attenzione) 40%, transparent);
+  color: var(--testo);
+  font-size: 13px; line-height: 1.4;
+}
+.striscia-senza-rete svg { color: var(--attenzione); flex: none; }
+.striscia-senza-rete span { color: var(--testo-muto); }
+
+/* Su telefono il testo lungo mangerebbe mezzo schermo: resta il messaggio. */
+@media (max-width: 620px) {
+  .striscia-senza-rete span { display: none; }
+}
+
+.nota-installazione h3 {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 8px; font-size: 15px;
+}
+.nota-installazione h3 svg { color: var(--palla); }
+.nota-installazione p { margin: 0 0 10px; }
+.nota-installazione .attenzione { color: var(--attenzione); }
+
+/* Le condizioni dell'uso installato: dette prima del pulsante, non dopo.
+   Elenco e non prosa — vanno scorse, non lette. */
+.condizioni { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 9px; }
+.condizioni li {
+  display: grid; gap: 2px;
+  padding-left: 15px; position: relative;
+  font-size: 12.5px; line-height: 1.45;
+}
+.condizioni li::before {
+  content: ""; position: absolute; left: 0; top: 7px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--palla);
+}
+.condizioni b { color: var(--testo); font-weight: 600; }
+.condizioni span { color: var(--testo-muto); }
+/* Nella scheda di chi ha gia installato restano i soli titoli: e un
+   promemoria, non piu una decisione da prendere. */
+.condizioni.compatte { gap: 4px; margin-top: 10px; }
+.condizioni.compatte b { font-weight: 500; color: var(--testo-muto); }
+
+/* Conferma su velo. Usata dove il comando e distruttivo e il pulsante e una
+   sola icona: non c'e spazio per la conferma in riga. */
+.velo {
+  position: fixed; inset: 0; z-index: 60;
+  display: grid; place-items: center; padding: 20px;
+  background: color-mix(in srgb, #000 62%, transparent);
+}
+.finestrella { max-width: 380px; width: 100%; }
+.finestrella h3 {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 8px; font-size: 15px;
+}
+.finestrella h3 svg { color: var(--attenzione); }
+.finestrella p { margin: 0 0 14px; }
+.finestrella-larga { max-width: 460px; }
+.finestrella .nota-finale { margin: 12px 0 0; font-size: 11.5px; }
+
+/* ============================================================
+   AVVISI DI PASSAGGIO
+   ============================================================ */
+
+/* In basso a destra su schermi larghi: e l'angolo che non copre ne la
+   navigazione ne il contenuto che si sta guardando. */
+.avvisi {
+  position: fixed; z-index: 70;
+  right: var(--sp4); bottom: var(--sp4);
+  display: grid; gap: 8px; justify-items: end;
+  max-width: min(380px, calc(100vw - 2 * var(--sp4)));
+  pointer-events: none;                     /* il velo non intercetta i clic */
+}
+.avviso {
+  pointer-events: auto;                     /* ma l'avviso si, per chiuderlo */
+  display: flex; align-items: flex-start; gap: 9px;
+  padding: 11px 12px;
+  background: var(--carta); color: var(--testo);
+  border: 1px solid var(--bordo); border-left: 3px solid var(--palla);
+  border-radius: var(--raggio);
+  box-shadow: 0 8px 24px rgb(0 0 0 / .35);
+  font-size: 13px; line-height: 1.45;
+  animation: avviso-entra .18s ease-out;
+}
+.avviso.attenzione { border-left-color: var(--attenzione); }
+.avviso svg { flex: none; margin-top: 1px; color: var(--palla); }
+.avviso.attenzione svg { color: var(--attenzione); }
+.avviso span { flex: 1; }
+.avviso .chiudi {
+  flex: none; font-size: 17px; line-height: 1;
+  padding: 0 2px; color: var(--testo-muto);
+}
+@keyframes avviso-entra { from { opacity: 0; transform: translateY(6px); } }
+
+/* Su telefono attraversano lo schermo e stanno sopra la barra bassa. */
+@media (max-width: 760px) {
+  .avvisi {
+    left: var(--sp3); right: var(--sp3); bottom: calc(var(--nav-basso, 58px) + 10px);
+    max-width: none; justify-items: stretch;
+  }
+}
+@media (prefers-reduced-motion: reduce) { .avviso { animation: none; } }
+
+/* La spunta con la spiegazione sotto: la casella resta allineata alla prima
+   riga anche quando il testo va a capo tre volte. */
+.scelta { display: flex; gap: 9px; align-items: flex-start; margin: 0 0 12px; cursor: pointer; }
+.scelta input { margin-top: 2px; flex: none; }
+.scelta span { display: grid; gap: 3px; font-size: 12.5px; line-height: 1.45; }
+.scelta em { font-style: normal; }
+
+/* Un `<label>` che si comporta da pulsante: serve dove il comando e in realta
+   un selettore di file, che non si puo stilare direttamente. */
+.come-pulsante {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 5px 11px; cursor: pointer;
+  background: var(--carta-alt); color: var(--testo);
+  border: 1px solid var(--bordo); border-radius: var(--raggio-piccolo, 6px);
+  font: inherit; font-size: 12px; letter-spacing: .02em;
+}
+.come-pulsante:hover { border-color: var(--palla); }
+.errore-riga { color: var(--pericolo); margin: 4px 0 0; }
+
+/* La tela dell'overlay: esattamente sopra il video, e trasparente ai clic —
+   altrimenti i comandi del lettore sotto non si potrebbero premere. */
+.lettore-riquadro { position: relative; line-height: 0; }
+.overlay-campo {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+}
+button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
+
+/* Il campo dall'alto, appoggiato in un angolo del video.
+   In alto a destra: in basso ci sono i comandi del lettore, a sinistra e
+   dove l'occhio torna quando segue l'azione. */
+.campo-mini {
+  position: absolute; top: 10px; right: 10px;
+  border: 1px solid var(--bordo); border-radius: var(--raggio);
+  overflow: hidden; line-height: 0;
+  box-shadow: 0 6px 20px rgb(0 0 0 / .45);
+  pointer-events: none;                 /* non ruba i clic al lettore */
+}
+.campo-mini canvas { display: block; }
+.campo-mini-legenda {
+  display: flex; gap: 10px; justify-content: center;
+  padding: 4px 6px; background: rgba(8,12,18,.9);
+  font-size: 9.5px; line-height: 1.4; color: var(--testo-muto);
+  letter-spacing: .02em;
+}
+.campo-mini-legenda span { display: inline-flex; align-items: center; gap: 4px; }
+.campo-mini-legenda i { width: 7px; height: 7px; border-radius: 50%; }
+
+/* Su schermi stretti il riquadro coprirebbe mezzo campo: si rimpicciolisce. */
+@media (max-width: 620px) {
+  .campo-mini { top: 6px; right: 6px; transform: scale(.72); transform-origin: top right; }
+}

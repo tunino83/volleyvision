@@ -1,0 +1,29 @@
+{
+  "name": "Volley Vision",
+  "short_name": "Volley Vision",
+  "description": "Video-analisi per la pallavolo: partite, statistiche, video.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#080c12",
+  "theme_color": "#080c12",
+  "categories": ["sports", "productivity"],
+  "//": "Dichiara se stessa fra le applicazioni collegate: e cio che permette a `navigator.getInstalledRelatedApps()` di rispondere che l'installazione esiste anche mentre si sta in una scheda del browser. Solo Chromium. ATTENZIONE: l'indirizzo qui sotto e un SEGNAPOSTO e va sostituito con quello vero dell'esercizio, altrimenti la funzione risponde sempre 'nessuna installazione' senza segnalare errori. `prefer_related_applications` resta assente: non stiamo dirottando l'utente altrove.",
+  "related_applications": [
+    { "platform": "webapp", "url": "https://volleyvision.example/manifest.webmanifest" }
+  ],
+  "lang": "it",
+  "dir": "ltr",
+  "icons": [
+    { "src": "/icona-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icona-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icona-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icona-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Partite", "url": "/partite", "icons": [{ "src": "/icona-192.png", "sizes": "192x192" }] },
+    { "name": "Statistiche di stagione", "url": "/stagione", "icons": [{ "src": "/icona-192.png", "sizes": "192x192" }] }
+  ]
+}

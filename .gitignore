@@ -1,0 +1,18 @@
+node_modules/
+dist/
+build/
+*.log
+.env
+.env.local
+*.db
+*.db-journal
+storage-dev/
+.DS_Store
+
+# Emessi per errore da un vecchio script di build: il sorgente e .tsx
+apps/web/src/**/*.js
+
+# Copie di sicurezza del database e dump di travaso: contengono dati reali
+# (email, password hash), non vanno mai versionati.
+*.db.prima-*
+apps/api/prisma/travaso.json

@@ -1,0 +1,22 @@
+{
+  "name": "volley-vision",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": ["packages/*", "apps/*"],
+  "scripts": {
+    "dev": "concurrently -n api,web -c blue,green \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:api": "npm run dev --workspace @vv/api",
+    "dev:web": "npm run dev --workspace @vv/web",
+    "build:packages": "npm run build --workspace @vv/schema && npm run build --workspace @vv/core && npm run build --workspace @vv/mock",
+    "genera:dati": "npm run genera --workspace @vv/mock",
+    "build": "npm run build:packages && npm run build --workspace @vv/api && npm run build --workspace @vv/web",
+    "db:push": "npm run db:push --workspace @vv/api",
+    "db:seed": "npm run db:seed --workspace @vv/api",
+    "setup": "npm install && npm run build:packages && npm run db:push && npm run db:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "typescript": "^5.6.3"
+  },
+  "engines": { "node": ">=20" }
+}

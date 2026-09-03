@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#080c12" />
+    <!--
+      Barlow Condensed: la tipografia dei tabelloni e delle grafiche di
+      telecronaca. E il singolo elemento che piu di ogni altro toglie
+      all'interfaccia l'aria di gestionale generico.
+      Inter per il testo corrente, dove serve leggibilita e non carattere.
+    -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" />
+    <!--
+      Il manifesto: e cio che rende l'applicazione installabile sul computer e
+      sul telefono. Senza, resta una pagina in una scheda.
+    -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <!-- Safari su iOS ignora il manifesto e legge queste. -->
+    <link rel="apple-touch-icon" href="/icona-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Volley Vision" />
+    <title>Volley Vision</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

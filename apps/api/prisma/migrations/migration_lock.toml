@@ -1,0 +1,3 @@
+# Generato da Prisma. Dice a quale motore appartengono le migrazioni:
+# cambiare provider senza rifarle produrrebbe SQL che il database rifiuta.
+provider = "postgresql"

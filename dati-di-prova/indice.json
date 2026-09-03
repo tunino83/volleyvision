@@ -1,0 +1,218 @@
+[
+  {
+    "chiave": "pulita",
+    "titolo": "Partita pulita",
+    "descrizione": "Tre set, quasi nessun difetto. E il riferimento: se qualcosa non torna qui, il problema e nostro, non del dato.",
+    "squadre": "ITA - FRA",
+    "parziali": "25-20 / 23-25 / 25-22",
+    "atteso": {
+      "set": 3,
+      "azioni": 140,
+      "puntiTotali": 140,
+      "parziali": [
+        [
+          25,
+          20
+        ],
+        [
+          23,
+          25
+        ],
+        [
+          25,
+          22
+        ]
+      ],
+      "posizioniDisponibili": true
+    },
+    "prodotto": {
+      "eventi": 1170,
+      "azioni": 140,
+      "fotogrammi": 15541
+    },
+    "difetti": {
+      "giocatoriIgnoti": 0.01,
+      "tocchiPersi": 0.02,
+      "confiniSetSbagliati": 0,
+      "doppiaMarcatura": 0.02,
+      "posizioniRotte": 0.01,
+      "conPosizioni": true
+    }
+  },
+  {
+    "chiave": "realistica",
+    "titolo": "Difetti come nei dati reali",
+    "descrizione": "Riproduce il profilo osservato nella partita vera: 15% di eventi senza giocatore, confini dei set sbagliati, doppie marcature.",
+    "squadre": "POL - BRA",
+    "parziali": "22-25 / 25-19 / 25-23",
+    "atteso": {
+      "set": 3,
+      "azioni": 139,
+      "puntiTotali": 139,
+      "parziali": [
+        [
+          22,
+          25
+        ],
+        [
+          25,
+          19
+        ],
+        [
+          25,
+          23
+        ]
+      ],
+      "posizioniDisponibili": true
+    },
+    "prodotto": {
+      "eventi": 962,
+      "azioni": 139,
+      "fotogrammi": 15302
+    },
+    "difetti": {
+      "giocatoriIgnoti": 0.15,
+      "tocchiPersi": 0.25,
+      "confiniSetSbagliati": 4,
+      "doppiaMarcatura": 0.1,
+      "posizioniRotte": 0.02,
+      "conPosizioni": true
+    }
+  },
+  {
+    "chiave": "cinque-set",
+    "titolo": "Cinque set con tie-break",
+    "descrizione": "Partita lunga fino al quinto set, che si gioca a 15 punti. Verifica che il conteggio dei set non presuma il 25.",
+    "squadre": "USA - SLO",
+    "parziali": "25-23 / 19-25 / 25-21 / 21-25 / 15-13",
+    "atteso": {
+      "set": 5,
+      "azioni": 212,
+      "puntiTotali": 212,
+      "parziali": [
+        [
+          25,
+          23
+        ],
+        [
+          19,
+          25
+        ],
+        [
+          25,
+          21
+        ],
+        [
+          21,
+          25
+        ],
+        [
+          15,
+          13
+        ]
+      ],
+      "posizioniDisponibili": true
+    },
+    "prodotto": {
+      "eventi": 1825,
+      "azioni": 212,
+      "fotogrammi": 25076
+    },
+    "difetti": {
+      "giocatoriIgnoti": 0.06,
+      "tocchiPersi": 0.1,
+      "confiniSetSbagliati": 2,
+      "doppiaMarcatura": 0.02,
+      "posizioniRotte": 0.01,
+      "conPosizioni": true
+    }
+  },
+  {
+    "chiave": "degradata",
+    "titolo": "Analisi degradata",
+    "descrizione": "Rilevamento scarso e nessuna posizione: il campo bidimensionale non e disponibile. Verifica che l'applicazione degradi con garbo.",
+    "squadre": "ARG - NED",
+    "parziali": "25-18 / 25-27 / 20-25 / 25-23 / 12-15",
+    "atteso": {
+      "set": 5,
+      "azioni": 215,
+      "puntiTotali": 215,
+      "parziali": [
+        [
+          25,
+          18
+        ],
+        [
+          25,
+          27
+        ],
+        [
+          20,
+          25
+        ],
+        [
+          25,
+          23
+        ],
+        [
+          12,
+          15
+        ]
+      ],
+      "posizioniDisponibili": false
+    },
+    "prodotto": {
+      "eventi": 1153,
+      "azioni": 215,
+      "fotogrammi": 0
+    },
+    "difetti": {
+      "giocatoriIgnoti": 0.35,
+      "tocchiPersi": 0.45,
+      "confiniSetSbagliati": 6,
+      "doppiaMarcatura": 0.15,
+      "posizioniRotte": 0,
+      "conPosizioni": false
+    }
+  },
+  {
+    "chiave": "limiti",
+    "titolo": "Casi limite",
+    "descrizione": "Set ai vantaggi prolungati, giocatore con il numero 0, scambi senza alcun tocco rilevato, un set decisamente corto.",
+    "squadre": "SRB - JPN",
+    "parziali": "32-30 / 25-15 / 34-36",
+    "atteso": {
+      "set": 3,
+      "azioni": 172,
+      "puntiTotali": 172,
+      "parziali": [
+        [
+          32,
+          30
+        ],
+        [
+          25,
+          15
+        ],
+        [
+          34,
+          36
+        ]
+      ],
+      "posizioniDisponibili": true
+    },
+    "prodotto": {
+      "eventi": 1085,
+      "azioni": 172,
+      "fotogrammi": 17842
+    },
+    "difetti": {
+      "giocatoriIgnoti": 0.08,
+      "tocchiPersi": 0.3,
+      "confiniSetSbagliati": 1,
+      "doppiaMarcatura": 0.05,
+      "posizioniRotte": 0.06,
+      "conPosizioni": true
+    }
+  }
+]
