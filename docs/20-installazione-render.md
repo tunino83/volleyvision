@@ -66,6 +66,13 @@ di errori; rigenerato il client prima della build, build pulita.
 `healthCheckPath: /api/health` dice a Render come verificare che il servizio
 sia vivo prima di instradargli traffico.
 
+**Le migrazioni girano nello `startCommand`, non nel build**, perche durante
+il build Render non garantisce l'accesso al database. Al primo deploy questo
+era stato dimenticato del tutto: il servizio risultava sano — `/api/health`
+rispondeva `{"ok":true}` perche non tocca il database — ma **qualunque
+rotta che legge dati rispondeva 500**, con le tabelle inesistenti. Sintomo
+ingannevole: il servizio sembra funzionare finche non ci si prova a entrare.
+
 ### L'interfaccia
 
 ```
@@ -108,6 +115,15 @@ Procedura corretta:
 Se il sito e gia stato costruito prima di impostare la variabile, restera a
 parlare con `http://localhost:3001` — l'indirizzo di sviluppo — finche non lo
 si ricostruisce.
+
+**E successo davvero al primo deploy.** Il sintomo: la pagina si apre ma
+l'accesso non funziona, e negli strumenti per sviluppatori (F12 > Network) la
+richiesta di login mostra `Request URL: http://localhost:3001/api/auth/login`
+con `Origin: https://volleyvision-web.onrender.com`. Il browser sta chiedendo
+a se stesso un indirizzo che esiste solo sul computer di chi sviluppa.
+
+Non serve toccare il codice: e solo la variabile mancante al momento del
+build. Impostala e **ricostruisci** — un riavvio non basta.
 
 ### `JWT_SECRET`
 

@@ -25,7 +25,20 @@ services:
     # condivisi (@vv/schema, @vv/core) si risolvono da li, non da dentro
     # apps/api. E lo stesso principio della guida cPanel.
     buildCommand: npm install && (cd apps/api && npx prisma generate) && npm run build:packages && npm run build --workspace @vv/api
-    startCommand: npm run start --workspace @vv/api
+    # Le migrazioni girano all'AVVIO, non nel build: durante il build Render
+    # non garantisce l'accesso al database, e senza tabelle ogni rotta che
+    # legge dati risponde 500 (`/api/health` no, perche non tocca il db —
+    # per questo sembrava tutto a posto).
+    #
+    # Sono nello startCommand e non in `preDeployCommand` perche quel campo
+    # non e disponibile su tutti i piani, e un Blueprint che lo usa dove non
+    # e supportato viene rifiutato.
+    #
+    # `migrate deploy` applica solo le migrazioni gia scritte e non ne
+    # genera di nuove — e il comando pensato per l'esercizio, al contrario
+    # di `migrate dev`. E idempotente: alla seconda esecuzione vede che sono
+    # gia applicate e non fa nulla, quindi puo restare a ogni riavvio.
+    startCommand: cd apps/api && npx prisma migrate deploy && cd ../.. && npm run start --workspace @vv/api
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
