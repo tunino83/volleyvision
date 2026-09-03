@@ -114,10 +114,12 @@ attive decadono.
 Il filesystem di un servizio Render **e effimero per difetto**: a ogni
 riavvio o nuovo deploy, quello che e stato scritto su disco sparisce.
 
-`render.yaml` dichiara un disco persistente (`disk:`, montato su
-`/var/data/storage`) — ma **i dischi persistenti non sono nel piano
-gratuito**. Sul piano gratuito, quella riga viene ignorata e i video caricati
-**vengono persi al primo riavvio o deploy successivo**.
+**`render.yaml` non dichiara un disco persistente**, deliberatamente: Render
+rifiuta l'intero Blueprint se un servizio sul piano `free` dichiara un
+`disk:`, quindi la riga non puo nemmeno starci finche si resta su quel piano.
+I video caricati **vengono persi al primo riavvio o deploy successivo** — il
+file contiene, commentato, il blocco da aggiungere se si passa a un piano a
+pagamento che lo supporta.
 
 Non e un difetto della configurazione: e un limite del piano. Le strade,
 in ordine di sforzo:

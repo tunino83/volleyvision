@@ -43,23 +43,32 @@ services:
         sync: false
       - key: STORAGE_DRIVER
         value: local
-      - key: STORAGE_LOCAL_DIR
-        value: /var/data/storage
+      # Nessuna variabile STORAGE_LOCAL_DIR: resta il valore di default del
+      # codice (./storage-dev), una cartella normale dentro il container.
+      #
+      # NIENTE DISCO PERSISTENTE QUI: i dischi montati ("disk:" in questo
+      # schema) non sono disponibili sul piano gratuito, e Render rifiuta
+      # l'intero Blueprint se il file ne dichiara uno su un servizio free.
+      # Conseguenza pratica: i video caricati **spariscono a ogni riavvio o
+      # deploy**, perche il resto del filesystem e comunque effimero per
+      # difetto. Vedi il punto 4 di docs/20-installazione-render.md.
+      #
+      # Per riattivare la persistenza su un piano a pagamento, aggiungere
+      # sotto "plan: standard" (o superiore) e questo blocco allo stesso
+      # livello di "envVars":
+      #
+      #   disk:
+      #     name: volleyvision-storage
+      #     mountPath: /var/data/storage
+      #     sizeGB: 10
+      #
+      # e allora si tornera a impostare anche STORAGE_LOCAL_DIR=/var/data/storage.
       - key: MAIL_DRIVER
         value: console
       - key: FORNITORE_ANALISI
         value: simulato
       - key: RICONCILIAZIONE_INTERVALLO_MIN
         value: "60"
-    disk:
-      # SENZA QUESTO DISCO i video caricati spariscono a ogni riavvio o
-      # deploy: il filesystem di un servizio Render e effimero per difetto.
-      # Il piano gratuito non include dischi persistenti: su quel piano i
-      # video non sopravvivono, ed e un limite da conoscere prima di caricarne
-      # uno vero. Vedi docs/20-installazione-render.md.
-      name: volleyvision-storage
-      mountPath: /var/data/storage
-      sizeGB: 10
 
   # --------------------------------------------------------- Interfaccia web
   # "web" + "env: static" e non un type "static" a se: e cosi che Render
