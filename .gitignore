@@ -21,3 +21,8 @@ apps/api/prisma/travaso.json
 #   npx tsx prisma/genera-seed-sql.ts > prisma/seed-demo.sql
 # Versionare un artefatto rigenerabile appesantisce il repository per sempre.
 apps/api/prisma/seed-demo.sql
+
+# Comandi personali con credenziali dentro: restano sulla macchina di chi li
+# scrive. Un file con la password del database in chiaro non va versionato.
+seedDbRender.sh
+*.local.sh

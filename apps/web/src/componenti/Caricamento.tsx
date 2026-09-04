@@ -7,7 +7,8 @@ import { Carta, gb } from "./Ui";
 const LIMITE_GB = 5;
 
 /**
- * Caricamento dei due video, da qualunque shell.
+ * Caricamento dei video, da qualunque shell. Il secondo lato e
+ * facoltativo: con una ripresa sola l'analisi parte lo stesso.
  *
  * Su telefono il trasferimento avviene **solo con l'applicazione aperta**
  * (opzione A: nessun servizio in secondo piano). Non e una limitazione
@@ -86,6 +87,12 @@ export default function Caricamento({ partita }: { partita: any }) {
                 bloccato={!partita.completezza.set1Completo} />
         ))}
       </div>
+
+      <p className="piccolo muto" style={{ marginTop: "var(--sp3)" }}>
+        Il <strong>lato 2 e facoltativo</strong>: con una sola ripresa l'analisi
+        parte lo stesso. La seconda telecamera aggiunge le posizioni viste
+        dall'altra estremita, dove la prima non arriva.
+      </p>
     </>
   );
 }
@@ -171,7 +178,12 @@ function Lato({ video, partita, bloccato }: { video: any; partita: any; bloccato
   return (
     <Carta>
       <div className="riga-sp">
-        <span className="grassetto">Lato {video.lato}</span>
+        <span className="grassetto">
+          Lato {video.lato}
+          {/* Detto qui e non solo in fondo: e la scheda che si guarda mentre
+              si decide se caricare, e scoprirlo dopo non serve a niente. */}
+          {video.lato === 2 && <span className="piccolo muto"> · facoltativo</span>}
+        </span>
         <span className="piccolo muto">{video.stato.toLowerCase().replace("_", " ")}</span>
       </div>
 

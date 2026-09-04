@@ -43,8 +43,14 @@ export class LifecycleService {
 
   /**
    * Valuta se la partita puo passare in coda per l'analisi.
-   * Condizioni: entrambi i video caricati E formazione del set 1 presente
-   * per entrambe le squadre (e un dato di ingresso per l'analisi).
+   *
+   * Condizioni: **almeno un video** caricato, e la formazione del set 1 per
+   * entrambe le squadre (e un dato di ingresso per l'analisi).
+   *
+   * Il secondo video e **facoltativo**. Lo era gia di fatto — il fornitore
+   * analizza cio che riceve — ma richiederli entrambi bloccava chi ne ha uno
+   * solo, che e il caso piu comune: una telecamera sola in tribuna. La
+   * direzione e verso una ripresa unica; questa e la prima tappa.
    */
   async valutaAvvio(matchId: string) {
     const m = await this.prisma.match.findUniqueOrThrow({
@@ -52,7 +58,7 @@ export class LifecycleService {
     if (m.stato !== "WAITING") return m;
 
     const caricati = m.video.filter((v) => v.stato === "CARICATO").length;
-    if (caricati < 2) return m;
+    if (caricati < 1) return m;
 
     const set1 = m.formazioni.filter((f) => f.set === 1);
     const completa = (f: any) => [f.pos1, f.pos2, f.pos3, f.pos4, f.pos5, f.pos6].every((p) => p !== null);

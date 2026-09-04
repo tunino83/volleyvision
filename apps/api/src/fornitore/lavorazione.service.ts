@@ -9,7 +9,7 @@ import { FORNITORE, type FornitoreAnalisi } from "./fornitore";
 /**
  * LAVORAZIONE — il ponte fra la partita e il fornitore.
  *
- * Quando una partita ha entrambi i video e le formazioni, la mette in
+ * Quando una partita ha almeno un video e le formazioni, la mette in
  * lavorazione presso il fornitore; poi controlla a intervalli se il risultato
  * e pronto e lo acquisisce.
  *
@@ -50,7 +50,7 @@ export class LavorazioneService implements OnModuleInit {
 
   /**
    * Mette una partita in lavorazione. Richiamata quando la partita entra in
-   * coda, cioe quando ha entrambi i video e la formazione del set 1.
+   * coda, cioe quando ha almeno un video e la formazione del set 1.
    */
   async accoda(matchId: string, richiedenteId: string) {
     const gia = await this.prisma.lavorazione.findFirst({
