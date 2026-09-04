@@ -21,7 +21,7 @@ Provato end-to-end, non solo compilato:
 | Caricamento | blocchi, **ripresa da offset errato**, completamento, rifiuto di file incompleto |
 | Caricamento, ripresa | riaprendo con **lo stesso file** la sessione e riusata (`ripresa: true`); con un file diverso si ricomincia e i byte vecchi sono eliminati |
 | Caricamento, annullo | `DELETE /uploads/:id` riporta il lato ad ASSENTE e cancella i byte |
-| Caricamento da mobile | avviso "solo in primo piano" mostrato con user agent mobile; blocchi da 2 MB |
+| Caricamento da mobile | nel browser: avviso "solo a scheda aperta", blocchi da 2 MB. Nell'app Android: servizio in primo piano con notifica, continua a schermo spento |
 | Ciclo di vita | transizioni con guardie, valutazione automatica dell'avvio |
 | Notifiche | campanellina con conteggio corretto |
 | Interfaccia | accesso, home, dettaglio partita, formazioni — nel browser |

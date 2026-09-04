@@ -15,9 +15,26 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException({ code: "NON_AUTENTICATO", message: "Accesso richiesto" });
     }
     try {
-      req.user = await this.jwt.verifyAsync<JwtUser>(h.slice(7));
+      const p = await this.jwt.verifyAsync<JwtUser & { scopo?: string }>(h.slice(7));
+
+      /*
+       * Un gettone con `scopo` non e una sessione.
+       *
+       * E il permesso ristretto che il servizio di caricamento nativo usa
+       * per un solo trasferimento (`uploads/delega.guard.ts`): vive dodici
+       * ore invece di quindici minuti, e quel prezzo si paga solo perche
+       * non apre nient'altro. Accettarlo qui lo trasformerebbe in una
+       * sessione lunga mezza giornata su tutta l'API.
+       */
+      if ((p as any).scopo) {
+        throw new UnauthorizedException({ code: "NON_AUTENTICATO",
+          message: "Questo permesso non vale per l'accesso" });
+      }
+
+      req.user = p;
       return true;
-    } catch {
+    } catch (e) {
+      if (e instanceof UnauthorizedException) throw e;
       throw new UnauthorizedException({ code: "NON_AUTENTICATO", message: "Sessione non valida" });
     }
   }

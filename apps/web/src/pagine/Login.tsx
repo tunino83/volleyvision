@@ -3,6 +3,9 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Campo } from "../componenti/Ui";
 import { Pallone } from "../componenti/Icone";
+import { ScaricaAndroid } from "../componenti/Installazione";
+import { inAppNativa } from "../platform/installazione";
+import { piattaforma } from "../platform";
 
 export default function Login() {
   const { accedi } = useAuth();
@@ -47,6 +50,19 @@ export default function Login() {
       <p className="piccolo muto">
         Dati di esempio: utente@volleyvision.test / admin@volleyvision.test — password123
       </p>
+
+      {/*
+        * Il collegamento all'applicazione Android **prima** dell'accesso.
+        *
+        * Nel profilo c'era gia, ma il profilo sta dietro l'accesso: chi apre
+        * il sito dal telefono per la prima volta compilava il modulo dentro
+        * il browser senza sapere che esiste l'applicazione. E il momento in
+        * cui l'informazione serve.
+        *
+        * Non dentro l'app nativa, dove sarebbe l'offerta di scaricare se
+        * stessa.
+        */}
+      {!inAppNativa() && <ScaricaAndroid daComputer={!piattaforma.mobile} />}
     </div>
   );
 }

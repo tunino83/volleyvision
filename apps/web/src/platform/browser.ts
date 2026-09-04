@@ -17,6 +17,19 @@ import * as inst from "./installazione";
 const MOBILE = typeof navigator !== "undefined"
   && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+/**
+ * Dentro l'applicazione Android il caricamento lo fa un servizio nativo, e
+ * continua a schermo spento (decisione 9b, rivista il 2026-09-04). Nel
+ * browser no, e non e una dimenticanza: un browser non ha un servizio a cui
+ * consegnare il lavoro.
+ *
+ * Si guarda il ponte Capacitor e non l'`userAgent`: dentro il guscio
+ * l'`userAgent` e comunque quello di Android, e non distinguerebbe l'app dal
+ * browser del telefono.
+ */
+const CON_SERVIZIO = typeof (globalThis as any).Capacitor !== "undefined"
+  && (globalThis as any).Capacitor?.isNativePlatform?.() === true;
+
 /** Il browser non espone sempre il tipo di connessione. Se tace, non si inventa. */
 const conn = (): any =>
   typeof navigator !== "undefined" ? (navigator as any).connection ?? null : null;
@@ -70,11 +83,11 @@ export const browser: PlatformCapabilities = {
   // Nel browser, su desktop, la scheda in secondo piano continua a lavorare.
   // Su telefono il sistema congela il processo: il caricamento e in primo
   // piano e basta, e la schermata lo dice.
-  trasferimentoInSecondoPiano: !MOBILE,
+  trasferimentoInSecondoPiano: !MOBILE || CON_SERVIZIO,
 
   trasferimento: creaTrasferimento({
     chunkMax: MOBILE ? 2 * 1024 * 1024 : 8 * 1024 * 1024,
-    soloPrimoPiano: MOBILE,
+    soloPrimoPiano: MOBILE && !CON_SERVIZIO,
   }),
 
   credenziali: {

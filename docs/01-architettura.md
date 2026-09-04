@@ -22,7 +22,7 @@ automaticamente in fase di compilazione.
 |---|---|---|---|
 | `spazio` | stima del browser | disco reale | disco del dispositivo |
 | `file` | non supportato | pacchetti locali | solo dati |
-| `trasferimento` | a blocchi con ripresa | idem | idem, **solo in primo piano** |
+| `trasferimento` | a blocchi con ripresa, **solo a scheda aperta** | idem | idem, ma **in secondo piano**: lo porta avanti un servizio nativo |
 | `rete` | tipo di connessione, se il browser lo dice | idem | idem |
 | `media` | **non supportato** | protocollo con Range | **non supportato** |
 | `credenziali` | memoria locale | memoria sicura | memoria sicura |
@@ -30,8 +30,16 @@ automaticamente in fase di compilazione.
 Il meccanismo di trasferimento e **uno solo**, in `platform/trasferimento.ts`:
 blocchi, ripresa, ritentativi con attesa crescente. Le shell non lo riscrivono,
 gli passano due parametri — dimensione massima del blocco e se il trasferimento
-si ferma uscendo dal primo piano. Il caso mobile non e una piattaforma diversa:
-e lo stesso codice con blocchi da 2 MB invece che da 8 e la sospensione attiva.
+si ferma uscendo dal primo piano.
+
+**L'unica eccezione e il servizio Android** (`ServizioCaricamento.java`), che
+riscrive quel ciclo in Java. Non poteva riusarlo: gira quando il WebView non
+esiste piu, e cio che deve sopravvivere all'uscita dall'applicazione non puo
+stare dentro l'applicazione. Ma non e un secondo *protocollo*: manda gli stessi
+blocchi alla stessa API e chiede al server da dove ripartire, esattamente come
+l'altro. E la regola 4b che tiene insieme le due copie — **lo stato sta sul
+server** — e finche resta li, due implementazioni non possono divergere sui
+numeri, solo sul codice.
 
 Dove una capacita non esiste, la funzione non e raggiungibile: non si nasconde
 un pulsante, non si registra la rotta.

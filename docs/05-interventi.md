@@ -188,8 +188,12 @@ nell'interfaccia: cambiarlo e una riga.
 
 ### 17 — Shell mobile: quel che resta
 
-Il caricamento da telefono e stato deciso **in primo piano** (opzione A). La
-parte che si poteva fare senza la shell e fatta e gira gia nel browser:
+Il caricamento da telefono **continua a schermo spento** nell'app Android
+(decisione 9b, rivista il 2026-09-04 dopo l'opzione A del 2026-08-29). Nel
+browser resta legato alla scheda aperta, e non e una scelta: un browser non ha
+un servizio a cui consegnare il lavoro.
+
+La parte comune gira gia nel browser:
 
 - `platform/trasferimento.ts` — blocchi, ripresa, ritentativi con attesa
   crescente. Un solo meccanismo, parametrizzato dalla piattaforma.
@@ -200,20 +204,36 @@ parte che si poteva fare senza la shell e fatta e gira gia nel browser:
 - Lato server: la sessione si riusa se il file e lo stesso, e
   `GET /matches/:id/videos/:lato/upload-session` la espone senza distruggerla.
 
-**Resta da fare quando arrivera Capacitor** (Fase 2-3):
+**Fatto con la shell Android** (2026-09-04):
+
+- Selettore di file nativo (`ACTION_OPEN_DOCUMENT` con permesso persistente):
+  l'indirizzo resta valido dopo un riavvio, cosa che un `File` del browser non
+  fa — ed e precisamente cio che serve a un servizio che gira quando la pagina
+  non c'e piu.
+- Schermo acceso durante il trasferimento nel browser (`wakeLock`), e sveglia
+  del processore nel servizio nativo: sono due cose diverse: la prima tiene
+  acceso lo schermo, la seconda permette di spegnerlo.
+- Registrazione con la mira di inquadratura, 720p a 4 Mbit/s, orientamento
+  bloccato.
+- Servizio in primo piano con notifica e ripresa automatica dopo le
+  interruzioni di rete.
+
+**Resta da fare:**
 
 1. Sostituire il riconoscimento da user agent con la piattaforma dichiarata
-   dalla shell. Lo user agent e un ripiego onesto finche la shell non c'e, non
-   una scelta definitiva: e la prima cosa da togliere.
-2. Selettore di file nativo al posto di `<input type="file">`, per accedere
-   alla galleria senza copiare il file in memoria.
-3. Tenere lo schermo acceso durante il trasferimento, altrimenti il blocco
-   automatico lo interrompe ogni volta.
-4. `navigator.connection` non e disponibile su iOS: la capacita `rete` deve
+   dalla shell. Oggi `browser.ts` guarda `Capacitor.isNativePlatform()` per il
+   solo trasferimento in secondo piano; il resto (blocchi da 2 MB) va ancora
+   per user agent.
+2. `navigator.connection` non e disponibile su iOS: la capacita `rete` deve
    passare al plugin di rete di Capacitor, altrimenti l'avviso sul consumo non
    compare mai proprio dove serve di piu.
-5. **Provarlo su file veri da gigabyte**, su rete di palestra. Un file di prova
-   da 300 KB non dimostra nulla di quello che conta qui.
+3. **Provarlo su file veri da gigabyte**, su rete di palestra, su un telefono
+   vero. Nulla di quanto sopra e stato eseguito su un apparecchio: compila e
+   basta. E la verifica che manca, ed e quella che conta.
+4. Esenzione dall'ottimizzazione della batteria: su alcuni telefoni
+   (Xiaomi, Huawei, Samsung con risparmio aggressivo) il servizio in primo
+   piano viene ucciso lo stesso. Va chiesta all'utente, e non si puo dare per
+   scontato che basti.
 
 ### 18 — ~~Responsive e restyling~~  *(risolto)*
 `apps/web/src/stile.css`, `componenti/Icone.tsx`, `componenti/Tema.tsx`

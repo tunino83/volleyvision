@@ -1,5 +1,6 @@
 import { Module, forwardRef } from "@nestjs/common";
-import { UploadsController } from "./uploads.controller";
+import { UploadsController, UploadsTrasferimentoController } from "./uploads.controller";
+import { DelegaGuard } from "./delega.guard";
 import { UploadsService } from "./uploads.service";
 import { ManutenzioneService } from "./manutenzione.service";
 import { PrismaService } from "../common/prisma.service";
@@ -11,7 +12,8 @@ import { FornitoreModule } from "../fornitore/fornitore.module";
 
 @Module({
   imports: [AuthModule, MatchesModule, forwardRef(() => FornitoreModule)],
-  controllers: [UploadsController],
-  providers: [UploadsService, ManutenzioneService, PrismaService, AccessService, AuditService],
+  controllers: [UploadsController, UploadsTrasferimentoController],
+  providers: [UploadsService, ManutenzioneService, PrismaService, AccessService, AuditService,
+              DelegaGuard],
 })
 export class UploadsModule {}

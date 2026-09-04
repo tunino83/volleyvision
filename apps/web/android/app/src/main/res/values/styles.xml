@@ -19,4 +19,19 @@
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
     </style>
+
+    <!--
+         La registrazione e a schermo pieno e su fondo nero.
+
+         Il nero non e una scelta estetica: qualunque altro colore, nella
+         frazione di secondo prima che arrivi l'anteprima, si vede come un
+         lampo. E il fondo attorno all'immagine quando le proporzioni della
+         fotocamera non coincidono con quelle dello schermo.
+    -->
+    <style name="Theme.VolleyVision.Registrazione" parent="Theme.AppCompat.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
 </resources>

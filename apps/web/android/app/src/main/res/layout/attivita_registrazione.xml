@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     La schermata di registrazione.
+
+     Tre strati: l'anteprima della fotocamera, la mira di inquadratura sopra,
+     e i comandi sopra ancora. Sono pochi di proposito — chi riprende sta
+     guardando la partita, non il telefono.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/anteprima"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <it.volleyvision.app.MiraCampo
+        android:id="@+id/mira"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Il tempo trascorso, in alto a sinistra. Serve piu del previsto: e il
+         solo modo di sapere, senza toccare niente, che sta registrando davvero. -->
+    <TextView
+        android:id="@+id/tempo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="16dp"
+        android:paddingStart="10dp" android:paddingEnd="10dp"
+        android:paddingTop="5dp" android:paddingBottom="5dp"
+        android:background="#99000000"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:fontFamily="monospace"
+        android:text="00:00" />
+
+    <!-- Lo spazio che resta. Un video da un set riempie diversi gigabyte: se
+         il telefono e pieno la registrazione si interrompe a meta partita, e
+         quello e il momento peggiore per scoprirlo. -->
+    <TextView
+        android:id="@+id/spazio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"
+        android:paddingStart="10dp" android:paddingEnd="10dp"
+        android:paddingTop="5dp" android:paddingBottom="5dp"
+        android:background="#99000000"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/avviso"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:padding="24dp"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="16dp">
+
+        <Button
+            android:id="@+id/annulla"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chiudi"
+            android:textColor="#FFFFFF"
+            android:background="#66000000" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <Button
+            android:id="@+id/registra"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Registra"
+            android:textStyle="bold"
+            android:textColor="#14181F"
+            android:background="#FFCC00" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <!-- Bilanciamento: senza, il pulsante di registrazione non sarebbe al
+             centro dello schermo ma al centro dello spazio rimasto. -->
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chiudi"
+            android:visibility="invisible" />
+    </LinearLayout>
+</FrameLayout>

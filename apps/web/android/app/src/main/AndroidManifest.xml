@@ -24,6 +24,38 @@
 
         </activity>
 
+        <!--
+             La registrazione con la mira di inquadratura.
+
+             E un'attivita a se e non una schermata web: l'anteprima della
+             fotocamera dev'essere una superficie nativa, e una `<video>` nel
+             WebView non da ne la stabilizzazione ne il controllo del profilo
+             di codifica. E l'unica funzione che giustifica davvero il guscio.
+
+             `screenOrientation="landscape"`: un campo da pallavolo in
+             verticale non ci sta, e lasciar ruotare significa consegnare al
+             fornitore meta partita girata di novanta gradi.
+        -->
+        <activity
+            android:name=".RegistrazioneAttivita"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|uiMode"
+            android:theme="@style/Theme.VolleyVision.Registrazione"
+            android:exported="false" />
+
+        <!--
+             Il caricamento che continua a schermo spento.
+
+             `dataSync` e il tipo giusto: non e riproduzione, non e posizione,
+             e un trasferimento di dati avviato dall'utente. Da Android 14 il
+             tipo va dichiarato qui e il permesso corrispondente richiesto,
+             altrimenti il servizio non parte affatto.
+        -->
+        <service
+            android:name=".ServizioCaricamento"
+            android:foregroundServiceType="dataSync"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -38,4 +70,27 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Registrazione. L'audio serve: il rumore del palazzetto aiuta a
+         ritrovare un'azione, e un video muto sembra guasto. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Caricamento a schermo spento. `WAKE_LOCK` tiene sveglio il
+         processore, non lo schermo: e la differenza fra caricare col telefono
+         in tasca e doverlo guardare per mezz'ora. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- Da Android 13 la notifica del servizio va autorizzata. Se l'utente
+         dice no il caricamento funziona lo stesso: perde solo il modo di
+         vederne l'avanzamento senza aprire l'applicazione. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!-- La fotocamera e necessaria per registrare, ma non per usare il resto:
+         `required=false` evita che il Play Store nasconda l'applicazione ai
+         tablet senza fotocamera posteriore. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>

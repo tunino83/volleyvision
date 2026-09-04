@@ -51,12 +51,18 @@ rilascio, specifiche di dettaglio, piano di sviluppo).
    si, per non dipendere dal cloud; l'interfaccia in `uploads/storage.ts` e
    pensata per entrambi.
 4b. **Lo stato del caricamento sta sul server, mai nel client.** E cio che rende
-   la ripresa uguale in tutte le shell e possibile da mobile senza servizi in
-   secondo piano: il caricamento da telefono avviene **solo in primo piano**, si
-   ferma quando l'applicazione esce, e riprende dal punto raggiunto. Il
-   meccanismo e uno solo, `platform/trasferimento.ts`; le shell gli passano due
-   parametri. Aprire una sessione **non ne distrugge una gia aperta sullo stesso
-   file**: se lo facesse, ogni riapertura butterebbe i gigabyte gia trasferiti.
+   la ripresa uguale in tutte le shell, e cio che ha reso il servizio nativo
+   Android **un secondo chiamante della stessa API**, non un secondo
+   meccanismo: manda gli stessi pezzi allo stesso indirizzo e chiede al server
+   da dove ripartire. Il meccanismo condiviso e `platform/trasferimento.ts`; le
+   shell gli passano due parametri. Aprire una sessione **non ne distrugge una
+   gia aperta sullo stesso file**: se lo facesse, ogni riapertura butterebbe i
+   gigabyte gia trasferiti.
+   Dove il caricamento continua cambia con la shell (decisione 9b, rivista il
+   2026-09-04): **nell'app Android anche a schermo spento e ad applicazione
+   chiusa**, grazie a un servizio in primo piano con notifica; **nel browser
+   solo con la scheda aperta**, perche il browser non ha un servizio — li si
+   tiene acceso lo schermo e basta.
 5. **Il fornitore sta dietro un'interfaccia.** Oggi risponde un simulatore;
    si passa al vero con `FORNITORE_ANALISI=esterno` e nient'altro. Nessun file
    fuori da `apps/api/src/fornitore/` sa chi analizza i video.

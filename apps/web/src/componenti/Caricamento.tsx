@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
 import { piattaforma, SOSPESO } from "../platform";
+import { nativoPresente } from "../platform/nativo";
+import CaricamentoNativo from "./CaricamentoNativo";
 import { Carta, gb } from "./Ui";
 
 const LIMITE_GB = 5;
@@ -10,10 +12,12 @@ const LIMITE_GB = 5;
  * Caricamento dei video, da qualunque shell. Il secondo lato e
  * facoltativo: con una ripresa sola l'analisi parte lo stesso.
  *
- * Su telefono il trasferimento avviene **solo con l'applicazione aperta**
- * (opzione A: nessun servizio in secondo piano). Non e una limitazione
- * nascosta: la schermata lo dichiara prima di cominciare, e alla riapertura
- * offre di riprendere dal punto raggiunto invece di ricominciare.
+ * Dove il trasferimento continua dipende dalla shell, e la schermata lo
+ * dichiara invece di lasciarlo scoprire. Nell'applicazione Android va avanti
+ * a schermo spento, affidato a un servizio (decisione 9b, rivista il
+ * 2026-09-04). Nel browser vive quanto la scheda aperta — un browser non ha
+ * un servizio a cui passare il lavoro — e alla riapertura si riprende dal
+ * punto raggiunto invece di ricominciare.
  */
 
 export default function Caricamento({ partita }: { partita: any }) {
@@ -65,6 +69,10 @@ export default function Caricamento({ partita }: { partita: any }) {
           Il caricamento avviene <strong>solo con l'applicazione aperta</strong>.
           Lo schermo resta acceso da solo finche dura. Se esci si ferma:
           riaprendo, riprende dal punto raggiunto senza ricominciare.
+          {piattaforma.mobile && (
+            <> Con l'<strong>applicazione per Android</strong> il caricamento
+            prosegue anche a schermo spento.</>
+          )}
         </div>
       )}
 
@@ -223,7 +231,18 @@ function Lato({ video, partita, bloccato }: { video: any; partita: any; bloccato
 
       {fileErrato && <div className="avviso errore piccolo" style={{ marginTop: 10 }}>{fileErrato}</div>}
 
-      {!completo && !prog && (
+      {/*
+        * Nell'applicazione Android i comandi sono altri, e non e una
+        * variante estetica: il `File` del browser non sopravvive all'uscita
+        * dall'applicazione, che e il momento in cui il servizio ne avrebbe
+        * bisogno. Li si sceglie un indirizzo di contenuto, e il caricamento
+        * lo porta avanti un servizio. Vedi `CaricamentoNativo`.
+        */}
+      {!completo && nativoPresente() && (
+        <CaricamentoNativo partita={partita} video={video} bloccato={bloccato} />
+      )}
+
+      {!completo && !prog && !nativoPresente() && (
         <div style={{ marginTop: 10 }}>
           {ripresa && (
             <div className="avviso info piccolo">

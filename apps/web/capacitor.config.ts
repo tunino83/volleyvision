@@ -8,15 +8,24 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * che serve — elenchi, statistiche, dati senza rete — non ha niente di
  * specifico per piattaforma.
  *
+ * ## Le due cose che qui sono native, e perche
+ *
+ * **La registrazione con la mira di inquadratura.** Non per l'anteprima — si
+ * otterrebbe anche nel WebView — ma per il profilo di codifica, l'orientamento
+ * bloccato e lo schermo che non si spegne. Registrando dal browser si ottiene
+ * quello che decide il browser, e su un'ora di partita la differenza fra 4 e
+ * 12 Mbit/s sono gigabyte.
+ *
+ * **Il caricamento in secondo piano.** Un video da 5 GB su rete mobile sono
+ * decine di minuti; nel browser il trasferimento vive quanto la scheda aperta.
+ * Un servizio nativo lo porta avanti a schermo spento (decisione 9b, rivista
+ * il 2026-09-04).
+ *
  * ## Cosa NON c'e dentro, e non e una dimenticanza
  *
  * **La riproduzione video.** Su telefono non si guardano le partite: e la
  * decisione 9b, presa perche un video e 5 GB e nessuno lo tiene sul telefono.
  * Il telefono riprende e carica; si guarda dal computer.
- *
- * **La registrazione con la griglia di inquadratura.** E l'unica funzione
- * davvero nativa prevista, e **non e ancora scritta**. Questo guscio la
- * ospitera senza cambiare nient'altro.
  */
 const config: CapacitorConfig = {
   appId: "it.volleyvision.app",

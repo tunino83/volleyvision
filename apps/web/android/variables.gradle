@@ -13,4 +13,11 @@ ext {
     androidxJunitVersion = '1.2.1'
     androidxEspressoCoreVersion = '3.6.1'
     cordovaAndroidVersion = '10.1.1'
+
+    // CameraX: la registrazione con la mira di inquadratura. Si usa la
+    // libreria di supporto e non `Camera2` diretta perche la gestione del
+    // ciclo di vita e dell'orientamento sarebbe da riscrivere a mano su ogni
+    // modello di telefono.
+    cameraxVersion = '1.4.1'
+
 }
