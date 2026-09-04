@@ -365,9 +365,14 @@ ${MONDI.map((m) => `    ${EMAIL(m.nome).padEnd(30)} ${m.citta}`).join("\n")}
  * E cio che la rende utile: le sintetiche sono troppo pulite.
  */
 async function partitaReale(utenti: { id: string; nome: string }[]) {
-  // `__dirname` sotto tsx e la radice del pacchetto (apps/api), NON la
-  // cartella del file: risalire di tre livelli finirebbe fuori dal progetto.
-  const dir = path.join(__dirname, "..", "..", "dati-di-prova", "reale");
+  // `__dirname` e la cartella DI QUESTO FILE (apps/api/prisma): per
+  // arrivare alla radice del progetto si risale di tre.
+  //
+  // Ci ero gia cascato: avevo "corretto" a due dopo una prova fatta da
+  // apps/api/ invece che da qui, quindi misurava un'altra cartella. Il seed
+  // non trovava piu i file e saltava la partita in silenzio. Se si tocca
+  // questa riga, la prova va fatta da dentro `prisma/`.
+  const dir = path.join(__dirname, "..", "..", "..", "dati-di-prova", "reale");
   const leggi = (n: string) => JSON.parse(fs.readFileSync(path.join(dir, n), "utf-8"));
 
   if (!fs.existsSync(path.join(dir, "events.json"))) {
