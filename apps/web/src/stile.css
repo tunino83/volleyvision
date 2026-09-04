@@ -1099,3 +1099,27 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
   background: transparent; font-weight: 500;
 }
 .pillola.condivisa svg { flex: none; }
+
+/* L'interruttore del pannello statistiche: in alto a destra, discreto.
+   Non un pulsante pieno — apre e chiude, non e un'azione. */
+.stat-video { position: relative; }
+.stat-video-interruttore {
+  position: absolute; top: 6px; right: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 6px; background: transparent; border: 0;
+  color: var(--testo-muto); cursor: pointer; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.stat-video-interruttore:hover { color: var(--palla); }
+
+/* La freccia disegnata col bordo: nessuna immagine da caricare per due
+   triangolini che cambiano verso. */
+.stat-video-interruttore .freccia {
+  width: 0; height: 0;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+}
+.stat-video-interruttore .freccia.su { border-bottom: 5px solid currentColor; }
+.stat-video-interruttore .freccia.giu { border-top: 5px solid currentColor; }
+
+/* Chiuso il tabellone perde il bordo inferiore: non separa piu da niente. */
+.stat-video.chiuso .stat-video-tabellone { padding-bottom: 0; border-bottom: 0; }

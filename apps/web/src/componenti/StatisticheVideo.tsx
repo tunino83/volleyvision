@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 /*
  * Import di spazio dei nomi e non del singolo nome: `@vv/core` e compilato
  * in CommonJS per l'API, e il raggruppatore del web non riesce a seguire i
@@ -31,6 +31,15 @@ import type { AnalysisPackage } from "@vv/schema";
 
 /** Quante metriche mostrare: e una colonna stretta, non una tabella. */
 const GRUPPI_MOSTRATI = ["sintesi", "attacco", "muro"];
+
+/*
+ * La scelta di tenerle chiuse si ricorda.
+ *
+ * Chi le chiude lo fa perche gli serve spazio per l'elenco azioni, e quella
+ * preferenza vale per tutte le partite: richiuderle ogni volta sarebbe un
+ * gesto ripetuto senza motivo.
+ */
+const CHIAVE_APERTO = "vv.video.statistiche";
 
 export function StatisticheVideo({ pacchetto, frame, nomi }: {
   pacchetto: AnalysisPackage;
@@ -88,8 +97,32 @@ export function StatisticheVideo({ pacchetto, frame, nomi }: {
     [pacchetto.events, stato.set, frame],
   );
 
+  const [aperto, setAperto] = useState(() => {
+    try { return localStorage.getItem(CHIAVE_APERTO) !== "0"; } catch { return true; }
+  });
+  const cambia = () => {
+    setAperto((v) => {
+      try { localStorage.setItem(CHIAVE_APERTO, v ? "0" : "1"); } catch { /* finestra privata */ }
+      return !v;
+    });
+  };
+
   return (
-    <div className="stat-video">
+    <div className={`stat-video ${aperto ? "" : "chiuso"}`}>
+      {/*
+        * Chiudendo resta il tabellone e spariscono le metriche.
+        *
+        * Il punteggio a quel momento e la ragione principale per cui il
+        * pannello esiste, e occupa una riga: nasconderlo insieme al resto
+        * costringerebbe a riaprire tutto per una sola informazione.
+        */}
+      <button className="stat-video-interruttore" onClick={cambia}
+              aria-expanded={aperto}
+              title={aperto ? "Nascondi le metriche" : "Mostra le metriche"}>
+        <span className={`freccia ${aperto ? "su" : "giu"}`} aria-hidden />
+        <span className="piccolo muto">{aperto ? "meno" : "piu"}</span>
+      </button>
+
       <div className="stat-video-tabellone">
         <span className="stat-video-squadra">{nomi.h}</span>
         <span className="numerico stat-video-punti">{stato.hPt}</span>
@@ -101,7 +134,7 @@ export function StatisticheVideo({ pacchetto, frame, nomi }: {
         <span className="stat-video-squadra">{nomi.a}</span>
       </div>
 
-      {gruppi.map((g) => (
+      {aperto && gruppi.map((g) => (
         <div key={g.chiave} className="stat-video-gruppo">
           <span className="etichetta">{g.titolo}</span>
           {g.metriche.map((m) => (
@@ -114,7 +147,7 @@ export function StatisticheVideo({ pacchetto, frame, nomi }: {
         </div>
       ))}
 
-      <p className="piccolo muto stat-video-nota">
+      {aperto && <p className="piccolo muto stat-video-nota">
         Valori del <strong>set {stato.set}</strong> fino al punto in cui stai
         guardando, non di fine partita.
         {/* Detto qui e non taciuto: sui dati reali il 53% degli eventi
@@ -125,7 +158,7 @@ export function StatisticheVideo({ pacchetto, frame, nomi }: {
         {" "}I <strong>punti realizzati</strong> vengono dai tocchi marcati dal
         fornitore e possono non quadrare col tabellone: e un limite del dato,
         non del calcolo.
-      </p>
+      </p>}
     </div>
   );
 }
