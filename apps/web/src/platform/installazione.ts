@@ -132,8 +132,28 @@ export function osserva(f: () => void): () => void {
  * depositati al posto di quelli appena modificati, e si passerebbero
  * pomeriggi a cercare un errore che non c'e piu.
  */
+/**
+ * Vero dentro l'applicazione Android, falsa nel browser.
+ *
+ * Capacitor mette un oggetto sulla finestra: e il modo che il guscio ha di
+ * farsi riconoscere senza che il codice dipenda dalla sua libreria.
+ */
+export const inAppNativa = () =>
+  typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform?.();
+
 export function registraGuscio(onNuovaVersione?: () => void) {
   if (!("serviceWorker" in navigator) || import.meta.env.DEV) return;
+
+  /*
+   * Dentro l'applicazione nativa il guscio non serve e fa danno.
+   *
+   * I file sono gia sul telefono, dentro il pacchetto installato: non c'e
+   * niente da conservare per l'uso senza rete, quello e gia risolto. In piu
+   * il guscio consegnerebbe file depositati al posto di quelli
+   * dell'aggiornamento appena installato dallo store, e l'applicazione
+   * resterebbe indietro senza che nessuno capisca perche.
+   */
+  if (inAppNativa()) return;
 
   /* Un guscio nuovo ha preso il posto del vecchio: significa che e stata
      pubblicata una versione diversa **mentre questa pagina era aperta**.

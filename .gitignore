@@ -26,3 +26,12 @@ apps/api/prisma/seed-demo.sql
 # scrive. Un file con la password del database in chiaro non va versionato.
 seedDbRender.sh
 *.local.sh
+
+# Android: il progetto va versionato, cio che Gradle genera no.
+# local.properties contiene il percorso dell SDK di CHI costruisce: su un
+# altro computer sarebbe sbagliato, e non e un dato del progetto.
+apps/web/android/local.properties
+apps/web/android/.gradle/
+apps/web/android/app/build/
+apps/web/android/build/
+apps/web/android/capacitor-cordova-android-plugins/
