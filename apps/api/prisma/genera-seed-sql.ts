@@ -13,10 +13,10 @@
  *
  * ## Cosa NON fa, e non e una svista
  *
- * **Non scrive i file delle posizioni.** Quelli stanno su disco, non nel
- * database, e un file SQL non puo crearli: `framesKey` resta nullo e il
- * campo 2D non avra dati. Le statistiche, che vivono nel pacchetto dentro il
- * database, funzionano tutte.
+ * **Non scrive nulla su disco**, e non serve piu: dalla revisione di
+ * settembre le posizioni stanno nel database (`PosizioneFrame`, una riga per
+ * fotogramma) e il file SQL le include. `framesKey` resta nullo, ed e giusto:
+ * indicava il vecchio file.
  *
  * ## Due dettagli di PostgreSQL che rompono se si sbagliano
  *
@@ -90,8 +90,8 @@ righe.push(`-- Seed dimostrativo di Volley Vision — GENERATO, non scrivere a m
 -- Rigenerare con:  npx tsx prisma/genera-seed-sql.ts > prisma/seed-demo.sql
 --
 -- Cinque utenti (password: password123), sei squadre e tre partite ciascuno.
--- Le posizioni dei giocatori non sono incluse: stanno in file su disco, non
--- nel database, quindi il campo 2D restera senza dati. Le statistiche no.
+-- Include le posizioni dei giocatori (tabella "PosizioneFrame"), quindi il
+-- campo bidimensionale funziona. Sono la parte piu voluminosa del file.
 --
 -- Si puo rieseguire: la transazione comincia cancellando cio che un seed
 -- precedente aveva creato, riconoscibile dal prefisso "seed_".
@@ -113,6 +113,7 @@ DELETE FROM "User"         WHERE "id" LIKE 'seed_%';
 
 const pwd = bcrypt.hashSync("password123", 10);
 let nAnalisi = 0;
+let nPosizioni = 0;
 
 for (const [iM, mondo] of MONDI.entries()) {
   const uid = id("user", iM);
@@ -198,7 +199,7 @@ for (const [iM, mondo] of MONDI.entries()) {
     // --- l'analisi, dallo stesso percorso dell'esercizio ---
     const partita = generaCasuale({
       seme: 20260000 + iM * 100 + iP, casa: casa.nome, ospite: ospite.nome });
-    const { pacchetto } = adatta(mid, 1, {
+    const { pacchetto, frames } = adatta(mid, 1, {
       events: partita.events, videos: partita.videos,
       frames: partita.frames ?? undefined });
     const allineato = allineaEventiAiSet(pacchetto);
@@ -207,13 +208,30 @@ for (const [iM, mondo] of MONDI.entries()) {
     righe.push(`INSERT INTO "Analysis" ("id","matchId","revision","pacchettoJson","qualitaJson","framesKey","creatoIl","aggiornatoIl") VALUES
   (${S(id("an", iM, iP))}, ${S(mid)}, 1, ${S(JSON.stringify(allineato))}, ${S(JSON.stringify(allineato.qualita))}, NULL, ${D(ora)}, ${D(ora)});`);
 
+    /*
+     * Le posizioni, in un blocco unico.
+     *
+     * Un solo INSERT per partita e non una riga per fotogramma: il client se
+     * le porta via tutte insieme, quindi il database non ha motivo di
+     * tenerle separate — e ventimila righe di INSERT farebbero un file
+     * ingestibile.
+     */
+    const anId = id("an", iM, iP);
+    if (frames.length) {
+      const dati = JSON.stringify(frames);
+      righe.push(`INSERT INTO "AnalysisPosizioni" ("analysisId","datiJson","fotogrammi","byte") VALUES
+  (${S(anId)}, ${S(dati)}, ${N(frames.length)}, ${N(dati.length)});`);
+      nPosizioni += frames.length;
+    }
+
     righe.push(`INSERT INTO "Notification" ("id","userId","matchId","tipo","vistaIl","creatoIl") VALUES
   (${S(id("notif", iM, iP))}, ${S(uid)}, ${S(mid)}, 'partita_pronta', ${iP === 0 ? "NULL" : D(ora)}, ${D(ora)});`);
   }
 }
 
 righe.push(`\nCOMMIT;`);
-righe.push(`\n-- 5 utenti · 30 squadre · 360 giocatori · 15 partite · ${nAnalisi} analisi`);
+righe.push(`\n-- 5 utenti · 30 squadre · 360 giocatori · 15 partite · ${nAnalisi} analisi
+-- ${nPosizioni.toLocaleString("it-IT")} fotogrammi con posizioni`);
 righe.push(`-- Accessi: marcello@ fabio@ antonio@ andrea@ paolo@volleyvision.test — password123`);
 
 process.stdout.write(righe.join("\n") + "\n");

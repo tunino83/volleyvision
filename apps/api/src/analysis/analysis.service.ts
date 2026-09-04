@@ -17,7 +17,8 @@ import type { AnalysisPackage } from "@vv/schema";
  * Il pacchetto canonico (eventi, azioni, set, qualita) e piccolo — circa
  * 1 MB — e sta nel database: e cio che serve a tutte le statistiche.
  * Le posizioni sono un ordine di grandezza piu grandi e servono solo al campo
- * bidimensionale della partita aperta: vanno su file, referenziate.
+ * bidimensionale della partita aperta: stanno in `PosizioneFrame`, una riga
+ * per fotogramma, interrogate per intervallo invece che lette per intero.
  * Vedi la divisione eventi/posizioni in ../../docs/01-architettura.md.
  */
 @Injectable()
@@ -51,21 +52,36 @@ export class AnalysisService {
         details: { formato: [String(e?.message ?? e).slice(0, 400)] } });
     }
 
-    if (frames.length) {
-      const p = this.percorsoFrames(matchId, revision);
-      mkdirSync(dirname(p), { recursive: true });
-      writeFileSync(p, JSON.stringify(frames));
-    }
-
-    await this.prisma.analysis.upsert({
+    const analisi = await this.prisma.analysis.upsert({
       where: { matchId },
       create: { matchId, revision, pacchettoJson: JSON.stringify(pacchetto),
-                qualitaJson: JSON.stringify(pacchetto.qualita),
-                framesKey: frames.length ? this.percorsoFrames(matchId, revision) : null },
+                qualitaJson: JSON.stringify(pacchetto.qualita), framesKey: null },
       update: { revision, pacchettoJson: JSON.stringify(pacchetto),
-                qualitaJson: JSON.stringify(pacchetto.qualita),
-                framesKey: frames.length ? this.percorsoFrames(matchId, revision) : null },
+                qualitaJson: JSON.stringify(pacchetto.qualita), framesKey: null },
     });
+
+    /*
+     * Le posizioni vanno nel database, una riga per fotogramma.
+     *
+     * Prima finivano in un file su disco: funziona su una macchina propria,
+     * non dove il filesystem e effimero — su un servizio che si riavvia, il
+     * campo bidimensionale smetteva di avere dati senza che nulla lo dicesse.
+     *
+     * Si cancella e si riscrive: reimportare una revisione deve sostituire le
+     * posizioni, non affiancarle a quelle vecchie.
+     */
+    if (frames.length) {
+      const dati = JSON.stringify(frames);
+      await this.prisma.analysisPosizioni.upsert({
+        where: { analysisId: analisi.id },
+        create: { analysisId: analisi.id, datiJson: dati,
+                  fotogrammi: frames.length, byte: dati.length },
+        update: { datiJson: dati, fotogrammi: frames.length, byte: dati.length },
+      });
+    } else {
+      // Reimportare senza posizioni deve toglierle, non lasciare le vecchie.
+      await this.prisma.analysisPosizioni.deleteMany({ where: { analysisId: analisi.id } });
+    }
 
     await this.prisma.match.update({
       where: { id: matchId }, data: { revisioneAnalisi: revision } });
@@ -215,11 +231,47 @@ export class AnalysisService {
       }));
   }
 
+  /**
+   * Le posizioni di un intervallo di fotogrammi.
+   *
+   * Senza intervallo (`da` e `a` a zero) le restituisce **tutte**: e cosi che
+   * le chiede il client, che se le porta in locale una volta sola. Compresse
+   * dalla trasmissione HTTP sono ~1,3 MB per partita, e da quel momento il
+   * campo bidimensionale funziona anche senza rete, con lo stesso codice.
+   *
+   * Il filtro per intervallo resta per compatibilita con chi lo usa ancora.
+   */
   async posizioni(userId: string, matchId: string, daFrame: number, aFrame: number) {
     await this.access.match(userId, matchId);
     const a = await this.prisma.analysis.findUnique({ where: { matchId } });
-    if (!a?.framesKey || !existsSync(a.framesKey)) return [];
-    const tutti = JSON.parse(readFileSync(a.framesKey, "utf-8")) as Array<{ f: number }>;
+    if (!a) return [];
+
+    const p = await this.prisma.analysisPosizioni.findUnique({
+      where: { analysisId: a.id }, select: { datiJson: true } });
+
+    if (p) {
+      const tutte = JSON.parse(p.datiJson) as Array<{ f: number }>;
+      // L'intervallo si applica qui e non nel database: le posizioni stanno
+      // in un blocco unico, e il client normalmente le chiede tutte. Il
+      // filtro resta perche la rotta lo accetta ancora.
+      return daFrame === 0 && aFrame === 0
+        ? tutte
+        : tutte.filter((x) => x.f >= daFrame && x.f <= aFrame);
+    }
+
+    return this.posizioniDaFile(a.framesKey, daFrame, aFrame);
+  }
+
+  /**
+   * Ripiego per le analisi importate quando le posizioni stavano su disco.
+   *
+   * Non si cancella insieme al resto: chi ha gia importato una partita non
+   * deve rifarlo per continuare a vedere il campo. Le nuove importazioni non
+   * passano piu di qui.
+   */
+  private posizioniDaFile(chiave: string | null, daFrame: number, aFrame: number) {
+    if (!chiave || !existsSync(chiave)) return [];
+    const tutti = JSON.parse(readFileSync(chiave, "utf-8")) as Array<{ f: number }>;
     return tutti.filter((x) => x.f >= daFrame && x.f <= aFrame);
   }
 }

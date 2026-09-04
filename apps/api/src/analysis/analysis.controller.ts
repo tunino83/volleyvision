@@ -71,9 +71,22 @@ export class AnalysisController {
     return this.svc.eventi(u.sub, id, b.indici ?? []);
   }
 
+  /**
+   * Le posizioni dei giocatori. **Senza `da` e `a` le restituisce tutte**,
+   * ed e cosi che le chiede il client: se le porta in locale una volta sola,
+   * cosi il campo bidimensionale funziona anche senza rete.
+   *
+   * Un intervallo si puo ancora chiedere, ma non e la via principale.
+   */
   @Get("positions")
   posizioni(@CurrentUser() u: JwtUser, @Param("id") id: string,
-            @Query("da") da: string, @Query("a") a: string) {
-    return this.svc.posizioni(u.sub, id, Number(da ?? 0), Number(a ?? 0));
+            @Query("da") da?: string, @Query("a") a?: string) {
+    // `Number("abc")` fa NaN, che confrontato con qualunque cosa e falso e
+    // svuoterebbe il risultato senza dire perche: si ripiega su "tutte".
+    const n = (v?: string) => {
+      const x = Number(v);
+      return Number.isFinite(x) ? x : 0;
+    };
+    return this.svc.posizioni(u.sub, id, n(da), n(a));
   }
 }

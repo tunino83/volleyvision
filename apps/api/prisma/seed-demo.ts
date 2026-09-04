@@ -28,8 +28,6 @@
  */
 import { Prisma, PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
-import * as fs from "fs";
-import * as path from "path";
 import { generaCasuale } from "@vv/mock";
 import { adatta, allineaEventiAiSet } from "../src/analysis/adapter";
 
@@ -106,14 +104,6 @@ async function rimuoviPrecedenti() {
    * lascerebbero 4-5 MB per partita di file che non appartengono piu a
    * nessuno, e a ogni `--rifai` se ne aggiungerebbero altri.
    */
-  const analisi = await prisma.analysis.findMany({
-    where: { match: { createdById: { in: ids } } }, select: { framesKey: true } });
-  for (const a of analisi) {
-    if (!a.framesKey) continue;
-    try { fs.rmSync(path.dirname(a.framesKey), { recursive: true, force: true }); }
-    catch { /* gia sparito, o mai scritto: non e un motivo per fermarsi */ }
-  }
-
   // In ordine di dipendenza: prima cio che cita, poi cio che e citato.
   // Le partite portano via da sole roster, formazioni, video e analisi
   // (cascata sulle chiavi esterne); campionati e squadre no.
@@ -144,7 +134,7 @@ async function main() {
   }
 
   const pwd = await bcrypt.hash("password123", 10);
-  let totPartite = 0, totAnalisi = 0;
+  let totPartite = 0, totAnalisi = 0, totPosizioni = 0;
 
   for (const [iM, mondo] of MONDI.entries()) {
     console.log(`\n${mondo.nome} ${mondo.cognome} — ${mondo.citta}`);
@@ -267,20 +257,24 @@ async function main() {
       });
       const allineato = allineaEventiAiSet(pacchetto);
 
-      let framesKey: string | null = null;
-      if (frames.length) {
-        framesKey = path.join(process.env.STORAGE_LOCAL_DIR ?? "./storage-dev",
-                              "analisi", m.id, "frames-r1.json");
-        fs.mkdirSync(path.dirname(framesKey), { recursive: true });
-        fs.writeFileSync(framesKey, JSON.stringify(frames));
-      }
-
-      await prisma.analysis.create({
+      const analisi = await prisma.analysis.create({
         data: { matchId: m.id, revision: 1,
                 pacchettoJson: JSON.stringify(allineato),
-                qualitaJson: JSON.stringify(allineato.qualita), framesKey },
+                qualitaJson: JSON.stringify(allineato.qualita), framesKey: null },
       });
       totAnalisi++;
+
+      // Le posizioni nel database, in un blocco: cosi il campo bidimensionale
+      // funziona anche dove il disco e effimero, e il client se le porta via
+      // tutte insieme per usarle senza rete.
+      if (frames.length) {
+        const dati = JSON.stringify(frames);
+        await prisma.analysisPosizioni.create({
+          data: { analysisId: analisi.id, datiJson: dati,
+                  fotogrammi: frames.length, byte: dati.length },
+        });
+        totPosizioni += frames.length;
+      }
 
       // La notifica della prima partita resta da leggere: cosi il campanello
       // in alto mostra qualcosa appena si entra.
@@ -299,6 +293,7 @@ Pronto.
 ${MONDI.map((m) => `    ${EMAIL(m.nome).padEnd(30)} ${m.citta}`).join("\n")}
 
   30 squadre · 360 giocatori · ${totPartite} partite · ${totAnalisi} analisi
+  ${totPosizioni.toLocaleString("it-IT")} fotogrammi con posizioni
 
   Ogni utente vede solo i propri dati: entrando con due utenze diverse le
   schermate non devono avere nulla in comune.

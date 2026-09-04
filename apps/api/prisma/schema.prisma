@@ -393,9 +393,36 @@ model Analysis {
   revision      Int
   pacchettoJson String
   qualitaJson   String
+  /// Percorso del vecchio file su disco. **Superato da `posizioni`**: resta
+  /// solo per leggere le analisi importate prima del passaggio al database.
+  /// Nuove importazioni lo lasciano nullo.
   framesKey     String?
+  posizioni     AnalysisPosizioni?
   creatoIl      DateTime @default(now())
   aggiornatoIl  DateTime @updatedAt
+}
+
+/// Dove stavano i giocatori, per tutta la partita, in un blocco solo.
+///
+/// **In tabella separata e non come colonna su `Analysis`.** Sono ~10 MB: una
+/// colonna li farebbe viaggiare a ogni `findUnique` sull'analisi, comprese le
+/// decine di letture che vogliono solo il pacchetto delle statistiche. La
+/// stessa ragione per cui la fotografia di una persona non sta su `Person`.
+///
+/// **Un blocco unico e non una riga per fotogramma**, perche il client se le
+/// porta via tutte in una volta: compresse sono 1,3 MB, e averle in locale fa
+/// funzionare il campo bidimensionale anche senza rete, con lo stesso codice
+/// che si usa online. Interrogarle per intervallo servirebbe solo a
+/// risparmiare un download che costa quanto due fotografie, in cambio di due
+/// percorsi diversi da mantenere.
+model AnalysisPosizioni {
+  analysisId String   @id
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  /// `[{ f, h: [{n,x,y}], a: [{n,x,y}] }]` — metri sul campo, non pixel.
+  datiJson   String
+  /// Quanti fotogrammi contiene: si dichiara senza doverlo interpretare.
+  fotogrammi Int
+  byte       Int
 }
 
 model Notification {

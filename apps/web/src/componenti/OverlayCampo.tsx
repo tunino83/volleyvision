@@ -30,10 +30,6 @@ interface Rilevamento {
   a: Array<{ n: number; x: number; y: number }>;
 }
 
-/* Quanto si prende e quando si ricarica, in fotogrammi (a 30 fps). */
-const INDIETRO = 150;      // 5 s: basta a coprire un salto all'indietro
-const AVANTI = 900;        // 30 s in avanti: si guarda in avanti, non indietro
-const MARGINE = 150;       // a 5 s dal bordo si ricarica, senza far vedere il vuoto
 
 /**
  * Oltre questa distanza il rilevamento non si disegna.
@@ -61,7 +57,7 @@ export function OverlayCampo({ matchId, video, fps, omografia, lato,
   const tela = useRef<HTMLCanvasElement>(null);
   const mini = useRef<HTMLCanvasElement>(null);
   const attivo = segniSulVideo || campo2d;
-  const dati = useRef<{ da: number; a: number; righe: Rilevamento[] }>({ da: 0, a: -1, righe: [] });
+  const dati = useRef<{ caricate: boolean; righe: Rilevamento[] }>({ caricate: false, righe: [] });
   const inCorso = useRef(false);
   const [pronto, setPronto] = useState(false);
 
@@ -74,18 +70,22 @@ export function OverlayCampo({ matchId, video, fps, omografia, lato,
     setPronto(true);
   }, [omografia, lato]);
 
-  /** Prende la finestra intorno a un fotogramma, se non c'e gia. */
-  const assicura = useCallback(async (frame: number) => {
-    const d = dati.current;
-    if (frame >= d.da + MARGINE && frame <= d.a - MARGINE) return;   // gia coperto
-    if (inCorso.current) return;
+  /**
+   * Scarica le posizioni **una volta sola, tutte**.
+   *
+   * Compresse dalla trasmissione HTTP sono ~1,3 MB per partita: meno di due
+   * fotografie, per un video che l'utente ha gia sul disco. In cambio sparisce
+   * la macchina delle finestre — quale intervallo ho, quanto manca al bordo,
+   * quando ricaricare — e soprattutto **lo stesso codice funziona senza
+   * rete**, perche i dati sono gia tutti qui.
+   */
+  const assicura = useCallback(async () => {
+    if (dati.current.caricate || inCorso.current) return;
     inCorso.current = true;
-    const da = Math.max(0, frame - INDIETRO);
-    const a = frame + AVANTI;
     try {
       const righe = await API.get<Rilevamento[]>(
-        `/matches/${matchId}/analysis/positions?da=${da}&a=${a}`);
-      dati.current = { da, a, righe };
+        `/matches/${matchId}/analysis/positions`);
+      dati.current = { caricate: true, righe };
     } catch {
       // Senza posizioni si guarda il video senza segni: e una perdita di
       // ornamento, non di funzione. Non si interrompe la riproduzione.
@@ -188,7 +188,7 @@ export function OverlayCampo({ matchId, video, fps, omografia, lato,
       if (!vivo) return;
       const tempo = meta?.mediaTime ?? v.currentTime;
       const frame = Math.round(tempo * fps);
-      void assicura(frame);
+      void assicura();
       disegna(frame);
       handle = rvfc ? rvfc(passo) : requestAnimationFrame(() => passo());
     };

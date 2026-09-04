@@ -16,3 +16,8 @@ apps/web/src/**/*.js
 # (email, password hash), non vanno mai versionati.
 *.db.prima-*
 apps/api/prisma/travaso.json
+
+# Seed SQL generato: 33 MB, si riproduce con
+#   npx tsx prisma/genera-seed-sql.ts > prisma/seed-demo.sql
+# Versionare un artefatto rigenerabile appesantisce il repository per sempre.
+apps/api/prisma/seed-demo.sql
