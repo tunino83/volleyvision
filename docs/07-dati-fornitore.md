@@ -163,8 +163,46 @@ palla.
 L'adattatore e l'**unico** punto che conosce il formato del fornitore. Se cambia,
 si tocca quel file e nient'altro.
 
+## `winner` e `value: "Point"` si contraddicono — scoperto il 2026-09-04
+
+Costruendo il pannello statistiche accanto al video e emersa una
+**contraddizione sistematica** nei dati reali, non un caso isolato:
+
+| | |
+|---|---|
+| Azioni con almeno un evento `Point` | 64 su 128 |
+| Di queste, in **contrasto** col vincitore dichiarato | **34 — il 53%** |
+
+Esempio, la primissima azione della partita: dichiara `winner: "a"` (Cina),
+ma contiene un attacco della Bulgaria marcato `value: "Point"`. Le due cose
+non possono essere entrambe vere.
+
+### Cosa e affidabile e cosa no
+
+**`hPt`/`aPt` sono affidabili.** Il punteggio progressivo ricostruito dalle
+azioni coincide con i punteggi finali dei set dichiarati: 18-25, 25-20,
+22-19. Verificato su tutta la partita.
+
+**`value: "Point"` non lo e**, o non significa quello che sembra. Metà delle
+volte contraddice chi ha vinto lo scambio.
+
+### Conseguenza per le metriche
+
+`puntiRealizzati` in `packages/core/src/metrics.ts` conta gli eventi
+`value: "Point"` di fondamentali A, S, B. Su questi dati **il numero non e
+attendibile**: in piu punti della partita risulta maggiore dei punti
+effettivamente segnati dalla squadra, che e impossibile.
+
+Non e un difetto del motore — calcola correttamente cio che gli si chiede —
+ma di cio che gli arriva. Finche non si chiarisce con il fornitore, quel
+valore va trattato con sospetto, e le schermate che lo mostrano dovrebbero
+dichiararlo.
+
 ## Da chiedere al fornitore
 
+0. **`value: "Point"` contro `winner`**: nel 53% delle azioni si
+   contraddicono (vedi sopra). Qual e la semantica esatta di `value`? Su
+   quale dei due si deve fare affidamento?
 1. **I video**: `path` e nullo. Su quale materiale sono contati i fotogrammi?
 2. **`frameDelta` vale 0**: i due lati sono davvero allineati, o non e stato calcolato?
 3. **Segmentazione dei set errata**: e un difetto noto o un caso isolato?

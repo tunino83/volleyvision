@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { OverlayCampo } from "./OverlayCampo";
+import { StatisticheVideo } from "./StatisticheVideo";
 import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Stato } from "./Ui";
@@ -41,6 +42,15 @@ export default function VideoLocale({ partita }: { partita: any }) {
   const [url, setUrl] = useState<string | null>(null);
   const [errore, setErrore] = useState<string | null>(null);
   const [presentato, setPresentato] = useState<{ chiesto: number; ottenuto: number } | null>(null);
+  /*
+   * Il fotogramma corrente, per le statistiche accanto al video.
+   *
+   * Aggiornato da `timeupdate`, che il browser emette circa quattro volte al
+   * secondo: abbastanza per delle statistiche — cambiano solo a fine scambio —
+   * e trenta volte meno di un aggiornamento per fotogramma, che ridisegnerebbe
+   * mezza schermata a ogni immagine.
+   */
+  const [frameCorrente, setFrameCorrente] = useState(0);
   /*
    * Due viste distinte, e la predefinita e il campo.
    *
@@ -176,7 +186,9 @@ export default function VideoLocale({ partita }: { partita: any }) {
               {/* La tela sta sopra il video, dentro lo stesso riquadro: e
                   quel riquadro a dare le coordinate ai segni. */}
               <div className="lettore-riquadro">
-                <video ref={video} src={url} controls preload="auto" className="lettore" />
+                <video ref={video} src={url} controls preload="auto" className="lettore"
+                       onTimeUpdate={(e) => fps && setFrameCorrente(
+                         Math.round(e.currentTarget.currentTime * fps))} />
                 {fps && posizioni && (
                   <OverlayCampo matchId={partita.id} video={video} fps={fps}
                                 omografia={omografia} lato={lato}
@@ -251,7 +263,16 @@ export default function VideoLocale({ partita }: { partita: any }) {
             </Carta>
           </div>
 
-          <Azioni partita={partita} onVai={vaiAlFotogramma} />
+          <aside className="banco-fianco">
+            {/* Le statistiche prima delle azioni: e il contesto in cui si
+                legge cio che sta sotto, non un'appendice. */}
+            {fps && pkg.data && (
+              <StatisticheVideo pacchetto={pkg.data} frame={frameCorrente}
+                                nomi={{ h: partita.home?.nome ?? "Casa",
+                                        a: partita.away?.nome ?? "Ospiti" }} />
+            )}
+            <Azioni partita={partita} onVai={vaiAlFotogramma} />
+          </aside>
         </div>
       )}
     </>

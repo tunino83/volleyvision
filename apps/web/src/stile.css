@@ -498,13 +498,20 @@ tbody tr:hover { background: var(--carta-alt); }
 .banco-video { min-width: 0; }
 .lettore { width: 100%; display: block; border-radius: var(--r); background: #000; }
 
+/* La colonna di destra: statistiche sopra, azioni sotto. Lo "sticky" sta
+   qui e non sull'elenco, altrimenti i due riquadri scorrerebbero separati. */
+.banco-fianco {
+  display: flex; flex-direction: column; gap: var(--sp3);
+  position: sticky; top: var(--sp4);
+  max-height: calc(100vh - 140px);
+}
+
 .banco-azioni {
   background: var(--carta); border: 1px solid var(--bordo); border-radius: var(--r);
   box-shadow: var(--ombra);
   display: flex; flex-direction: column;
-  /* Alto quanto lo schermo, non quanto l'elenco: e una colonna, non una pagina. */
-  max-height: calc(100vh - 200px); min-height: 300px;
-  position: sticky; top: var(--sp4);
+  /* Si prende cio che resta dopo le statistiche, senza sfondare la colonna. */
+  min-height: 200px; flex: 1; overflow: hidden;
 }
 .banco-azioni-testa {
   display: flex; align-items: center; justify-content: space-between; gap: var(--sp2);
@@ -1029,4 +1036,57 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 /* Su schermi stretti il riquadro coprirebbe mezzo campo: si rimpicciolisce. */
 @media (max-width: 620px) {
   .campo-mini { top: 6px; right: 6px; transform: scale(.72); transform-origin: top right; }
+}
+
+
+/* ============================================================
+   STATISTICHE ACCANTO AL VIDEO
+   ============================================================ */
+
+.stat-video {
+  background: var(--carta); border: 1px solid var(--bordo); border-radius: var(--r);
+  box-shadow: var(--ombra);
+  padding: var(--sp3); flex: none;
+}
+
+/* Il tabellone: squadra, punti, set, punti, squadra — come sopra un campo. */
+.stat-video-tabellone {
+  display: grid; grid-template-columns: 1fr auto auto auto 1fr;
+  align-items: center; gap: 6px;
+  padding-bottom: var(--sp3); border-bottom: 1px solid var(--bordo);
+}
+.stat-video-squadra {
+  font-size: 11px; line-height: 1.2; color: var(--testo-muto);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.stat-video-tabellone > .stat-video-squadra:last-child { text-align: right; }
+.stat-video-punti {
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 30px; font-weight: 700; line-height: 1; color: var(--testo);
+}
+.stat-video-set {
+  display: grid; justify-items: center; gap: 1px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--testo-muto); padding: 0 6px;
+}
+.stat-video-set em { font-style: normal; font-weight: 700; color: var(--palla); }
+
+.stat-video-gruppo { margin-top: var(--sp3); }
+.stat-video-gruppo .etichetta { display: block; margin-bottom: 4px; }
+.stat-video-riga {
+  display: grid; grid-template-columns: 3ch 1fr 3ch;
+  align-items: baseline; gap: 8px;
+  font-size: 12px; padding: 2px 0;
+}
+.stat-video-riga > :first-child { text-align: right; }
+.stat-video-riga > :last-child { text-align: left; }
+.stat-video-nome { color: var(--testo-muto); text-align: center; font-size: 11px; }
+
+.stat-video-nota { margin: var(--sp3) 0 0; font-size: 11px; line-height: 1.4; }
+
+/* Su schermi stretti il banco diventa una colonna sola: le statistiche
+   restano in cima, dove servono, e le azioni scendono sotto. */
+@media (max-width: 900px) {
+  .banco-fianco { position: static; max-height: none; }
+  .banco-azioni { max-height: 60vh; }
 }
