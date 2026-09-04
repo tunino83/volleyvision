@@ -28,6 +28,8 @@
  */
 import { Prisma, PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
+import * as fs from "fs";
+import * as path from "path";
 import { generaCasuale } from "@vv/mock";
 import { adatta, allineaEventiAiSet } from "../src/analysis/adapter";
 
@@ -135,6 +137,7 @@ async function main() {
 
   const pwd = await bcrypt.hash("password123", 10);
   let totPartite = 0, totAnalisi = 0, totPosizioni = 0;
+  const utenti: { id: string; nome: string }[] = [];
 
   for (const [iM, mondo] of MONDI.entries()) {
     console.log(`\n${mondo.nome} ${mondo.cognome} — ${mondo.citta}`);
@@ -284,7 +287,10 @@ async function main() {
       });
     }
     console.log(`  3 partite (2 analizzate, 1 in attesa video)`);
+    utenti.push(utente);
   }
+
+  await partitaReale(utenti);
 
   console.log(`
 Pronto.
@@ -298,6 +304,112 @@ ${MONDI.map((m) => `    ${EMAIL(m.nome).padEnd(30)} ${m.citta}`).join("\n")}
   Ogni utente vede solo i propri dati: entrando con due utenze diverse le
   schermate non devono avere nulla in comune.
 `);
+}
+
+/**
+ * LA PARTITA VERA — una copia sola, condivisa con tutti.
+ *
+ * Bulgaria vs Cina, VNL 2021: gli unici dati reali del fornitore. E l'unica
+ * partita su cui il campo bidimensionale e il salto al fotogramma si possono
+ * confrontare con un video vero — le sintetiche non hanno un video.
+ *
+ * **Condivisa e non duplicata.** Duplicarla darebbe a ognuno dieci megabyte
+ * di posizioni identiche; e soprattutto sarebbero cinque partite diverse, e
+ * una correzione su una non si vedrebbe sulle altre. `CompetitionShare` fa
+ * esattamente questo lavoro, ed esiste gia.
+ *
+ * Passa dallo stesso adattatore dell'esercizio, quindi porta con se i difetti
+ * dei dati veri — confini dei set sbagliati, 15% di eventi senza giocatore.
+ * E cio che la rende utile: le sintetiche sono troppo pulite.
+ */
+async function partitaReale(utenti: { id: string; nome: string }[]) {
+  // `__dirname` sotto tsx e la radice del pacchetto (apps/api), NON la
+  // cartella del file: risalire di tre livelli finirebbe fuori dal progetto.
+  const dir = path.join(__dirname, "..", "..", "dati-di-prova", "reale");
+  const leggi = (n: string) => JSON.parse(fs.readFileSync(path.join(dir, n), "utf-8"));
+
+  if (!fs.existsSync(path.join(dir, "events.json"))) {
+    console.log("Partita reale: file non trovati in dati-di-prova/reale, saltata.");
+    return;
+  }
+
+  const proprietario = utenti[0];
+  console.log(`
+Partita reale — di ${proprietario.nome}, condivisa con gli altri`);
+
+  const camp = await prisma.competition.create({
+    data: { ownerId: proprietario.id, nome: "Volleyball Nations League",
+            stagione: "2021", descrizione: "Dati reali del fornitore" },
+  });
+
+  // Le due nazionali: squadre normali, come le creerebbe un utente.
+  const squadre: Record<string, string> = {};
+  for (const nome of ["Bulgaria", "Cina"]) {
+    const t = await prisma.team.create({
+      data: { ownerId: proprietario.id, nome, stagione: "2021" } });
+    squadre[nome] = t.id;
+  }
+
+  const m = await prisma.match.create({
+    data: {
+      competitionId: camp.id, homeTeamId: squadre["Bulgaria"], awayTeamId: squadre["Cina"],
+      createdById: proprietario.id, data: new Date("2021-06-01T20:00:00"),
+      citta: "Rimini", campo: "VNL Bubble", numeroSet: 3,
+      stato: "READY", revisioneAnalisi: 1,
+      tagJson: JSON.stringify(["reale", "fornitore"]),
+      video: { create: [1, 2].map((lato) => ({
+        lato, stato: "NORMALIZZATO", nomeFile: `lato${lato}.mp4`,
+        fps: 30, frameCount: 148648, caricatoIl: new Date("2021-06-01T20:00:00"),
+      })) },
+    },
+  });
+
+  const { pacchetto, frames } = adatta(m.id, 1, {
+    events: leggi("events.json"), videos: leggi("videos.json"), frames: leggi("frames.json"),
+  });
+  const allineato = allineaEventiAiSet(pacchetto);
+
+  const analisi = await prisma.analysis.create({
+    data: { matchId: m.id, revision: 1,
+            pacchettoJson: JSON.stringify(allineato),
+            qualitaJson: JSON.stringify(allineato.qualita), framesKey: null },
+  });
+
+  if (frames.length) {
+    const dati = JSON.stringify(frames);
+    await prisma.analysisPosizioni.create({
+      data: { analysisId: analisi.id, datiJson: dati,
+              fotogrammi: frames.length, byte: dati.length },
+    });
+  }
+
+  // Il roster della partita: i numeri che il fornitore ha visto in campo.
+  // Non collegati a `Person`, e non e una svista — sono giocatori di due
+  // nazionali, non persone dell'anagrafica di chi guarda.
+  const maglie = new Map<string, Set<number>>([["h", new Set()], ["a", new Set()]]);
+  for (const e of allineato.events) {
+    if (e.jersey != null) maglie.get(e.team)!.add(e.jersey);
+  }
+  for (const [lato, numeri] of maglie) {
+    await prisma.matchPlayer.createMany({
+      data: [...numeri].sort((x, y) => x - y).map((n) => ({
+        matchId: m.id, lato, numeroMaglia: n,
+        cognome: lato === "h" ? "BUL" : "CHN", nome: `n.${n}`,
+      })),
+    });
+  }
+
+  // La condivisione: gli altri quattro la vedono senza averne una copia.
+  for (const u of utenti.slice(1)) {
+    await prisma.competitionShare.create({
+      data: { competitionId: camp.id, userId: u.id,
+              email: `${u.nome.toLowerCase()}@volleyvision.test` },
+    });
+  }
+
+  console.log(`  ${allineato.events.length} eventi · ${allineato.actions.length} azioni · `
+            + `${frames.length.toLocaleString("it-IT")} fotogrammi con posizioni`);
+  console.log(`  condivisa con ${utenti.length - 1} utenti`);
 }
 
 main().catch((e) => { console.error(e); process.exit(1); })
