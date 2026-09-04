@@ -122,17 +122,7 @@ export function InvitoInstallazione() {
 
   // Su telefono si rimanda all'app vera invece di proporne una seconda.
   if (piattaforma.mobile && !giaInstallata) {
-    return (
-      <Carta className="nota-installazione">
-        <h3><I.Pallone d={17} /> Volley Vision su telefono</h3>
-        <p className="piccolo muto">
-          Su telefono e tablet Volley Vision e un'applicazione a se, che si
-          scarica dallo store. Questa pagina web funziona, ma l'applicazione
-          fa anche le cose che il browser non puo fare — come registrare le
-          partite con la fotocamera.
-        </p>
-      </Carta>
-    );
+    return <ScaricaAndroid />;
   }
 
   if (giaInstallata) {
@@ -328,5 +318,51 @@ export function PopupInstallazione() {
         </p>
       </Carta>
     </div>
+  );
+}
+
+
+/*
+ * Dove sta l'APK.
+ *
+ * Oggi fra i file statici del sito. **Non e la sistemazione definitiva**: e
+ * un binario di sei megabyte che cambia a ogni versione, e versionarlo fa
+ * crescere la cronologia per sempre. La casa giusta e una release su
+ * GitHub, o lo store quando ci sara: e per questo che l'indirizzo e una
+ * costante e non e scritto nel testo — cambiarlo sara una riga.
+ */
+const APK = "/scarica/volley-vision.apk";
+
+/**
+ * L'invito a scaricare l'applicazione Android.
+ *
+ * Si mostra a chi apre il sito da un telefono, dove installare la versione
+ * web non ha senso: su Android l'applicazione e un'altra cosa. Ma anche da
+ * computer serve, perche il collegamento lo si manda a se stessi — per
+ * questo compare in entrambi i casi, con parole diverse.
+ */
+export function ScaricaAndroid({ daComputer = false }: { daComputer?: boolean }) {
+  return (
+    <Carta className="nota-installazione">
+      <h3><I.Pallone d={17} /> Volley Vision per Android</h3>
+
+      <p className="piccolo muto">
+        {daComputer
+          ? "Per il telefono c'e un'applicazione a se. Apri questo indirizzo dal telefono, oppure mandati il file."
+          : "Su telefono Volley Vision e un'applicazione a se. Questa pagina funziona lo stesso, ma l'applicazione si apre dalla schermata Home e non dipende dal browser."}
+      </p>
+
+      <a className="bottone" href={APK} download>Scarica per Android</a>
+
+      {/*
+        * Detto prima e non dopo: Android mostra un avviso, e chi non se lo
+        * aspetta pensa che il file sia guasto e lo butta.
+        */}
+      <p className="piccolo muto nota-finale">
+        Android chiedera il permesso di installare da <b>origini sconosciute</b>:
+        e normale per un'applicazione che non arriva dal Play Store. La versione
+        firmata per lo store arrivera piu avanti.
+      </p>
+    </Carta>
   );
 }

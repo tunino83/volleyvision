@@ -3,8 +3,9 @@ import { useMutation } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
 import { Campo, Carta } from "../componenti/Ui";
 import { useAuth } from "../auth/AuthContext";
-import { InvitoInstallazione } from "../componenti/Installazione";
+import { InvitoInstallazione, ScaricaAndroid } from "../componenti/Installazione";
 import { SchedaLocale } from "../locale/SchedaLocale";
+import { piattaforma } from "../platform";
 
 /**
  * Il proprio profilo: chi sono, come entro, come cambio la password.
@@ -35,6 +36,9 @@ export default function Profilo() {
           {/* Sta qui e non in un banner: e una cosa che riguarda "come uso
               questa applicazione", non il lavoro in corso. */}
           <InvitoInstallazione />
+          {/* Anche da computer: il collegamento lo si manda al proprio
+              telefono, ed e da qui che si va a cercarlo. */}
+          {!piattaforma.mobile && <ScaricaAndroid daComputer />}
           {/* L'altro lato della stessa domanda: cosa tiene questo dispositivo. */}
           <SchedaLocale />
         </div>
