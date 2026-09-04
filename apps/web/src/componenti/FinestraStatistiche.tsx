@@ -32,13 +32,18 @@ export function FinestraStatistiche({ aperta, onChiudi, id, titolo }: {
   if (!aperta) return null;
 
   return (
-    <div className="finestra-piena" role="dialog" aria-modal="true" aria-label="Statistiche">
+    <div className="finestra-velo"
+         // Il clic sul velo chiude, quello dentro no: si confronta il
+         // bersaglio perche l'evento sale comunque dai figli.
+         onClick={(e) => { if (e.target === e.currentTarget) onChiudi(); }}>
+      <div className="finestra-piena" role="dialog" aria-modal="true" aria-label="Statistiche">
       <div className="finestra-piena-testa">
         <span className="etichetta">{titolo}</span>
         <button className="piccolo" onClick={onChiudi}>Chiudi</button>
       </div>
-      <div className="finestra-piena-corpo">
-        <Statistiche id={id} inFinestra />
+        <div className="finestra-piena-corpo">
+          <Statistiche id={id} inFinestra />
+        </div>
       </div>
     </div>
   );

@@ -1243,10 +1243,23 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 /* Una finestra che copre lo schermo, con testa fissa e corpo che scorre.
    Non un velo trasparente: qui si legge una tabella, e vedere il dettaglio
    in trasparenza dietro i numeri li renderebbe piu difficili da leggere. */
-.finestra-piena {
+/* Il velo: e cio che dice "c'e qualcosa sotto". Senza, una finestra che
+   copre tutto con lo stesso sfondo della pagina sembra una schermata nuova,
+   e non si capisce che si puo chiudere per tornare dov'eri. */
+.finestra-velo {
   position: fixed; inset: 0; z-index: 85;
-  background: var(--sfondo);
-  display: flex; flex-direction: column;
+  background: color-mix(in srgb, #000 62%, transparent);
+  display: grid; place-items: center; padding: 2.5vh 2.5vw;
+}
+
+.finestra-piena {
+  width: 95vw; height: 95vh;
+  background: var(--carta-alt, var(--sfondo));
+  border: 1px solid var(--bordo); border-radius: var(--r);
+  /* L'ombra stacca la finestra dal velo: il bordo da solo, sul fondo scuro,
+     quasi non si vede. */
+  box-shadow: 0 24px 60px rgb(0 0 0 / .55);
+  display: flex; flex-direction: column; overflow: hidden;
 }
 .finestra-piena-testa {
   display: flex; align-items: center; justify-content: space-between;
