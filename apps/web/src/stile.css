@@ -1228,3 +1228,14 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 }
 .avatar-colore.scelto { border-color: var(--testo); }
 .avatar-colore:hover { border-color: var(--palla); }
+
+/* I set nell'elenco azioni: pannelli senza cornice propria, perche sono
+   gia dentro il riquadro delle azioni — un bordo dentro l'altro sarebbe
+   solo rumore. Si separano con una riga. */
+.banco-azioni-elenco .pannello {
+  background: transparent; border: 0; border-radius: 0;
+  box-shadow: none; border-bottom: 1px solid var(--bordo);
+}
+.banco-azioni-elenco .pannello:last-child { border-bottom: 0; }
+.banco-azioni-elenco .pannello-testa { padding: var(--sp2) var(--sp3); }
+.banco-azioni-elenco .pannello-corpo { padding: 0 var(--sp3) var(--sp3); }

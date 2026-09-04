@@ -83,6 +83,8 @@ export default function VideoLocale({ partita }: { partita: any }) {
   // Le due matrici arrivano col pacchetto: senza, l'overlay non esiste.
   const omografia = pkg.data?.video?.homography ?? null;
   const posizioni: boolean = !!pkg.data?.qualita?.posizioniDisponibili;
+  /** I set dichiarati dall'analisi: senza, i pannelli non saprebbero quanti. */
+  const setsPartita: number[] = (pkg.data?.sets ?? []).map((s: any) => s.n);
 
   // L'indirizzo temporaneo va revocato: altrimenti il file resta agganciato
   // in memoria finche la scheda e aperta.
@@ -125,10 +127,10 @@ export default function VideoLocale({ partita }: { partita: any }) {
     /*
      * Riprendere o fermarsi non e la stessa richiesta.
      *
-     * Chi preme "un fotogramma avanti" sta **ispezionando**: far ripartire il
-     * video gli porterebbe via il fotogramma che voleva guardare. Chi clicca
-     * un'azione nell'elenco vuole **vederla**, e restare fermi sul primo
-     * fotogramma lo costringerebbe a un secondo clic ogni volta.
+     * Chi preme "5 s indietro" sta **cercando**: vuole vedere dov'e finito,
+     * non far ripartire il video da li. Chi clicca un'azione nell'elenco
+     * vuole **vederla**, e restare fermi sul primo fotogramma lo
+     * costringerebbe a un secondo clic ogni volta.
      *
      * `play()` restituisce una promessa che puo essere respinta — il browser
      * blocca la riproduzione non richiesta dall'utente. Qui nasce sempre da un
@@ -209,8 +211,6 @@ export default function VideoLocale({ partita }: { partita: any }) {
                 </div>
 
                 <div className="riga" style={{ marginTop: "var(--sp3)" }}>
-                <button className="piccolo" onClick={() => passo(-1)}>‹ 1 fot.</button>
-                <button className="piccolo" onClick={() => passo(1)}>1 fot. ›</button>
                 <button className="piccolo" onClick={() => passo(-(fps ?? 30) * 5)}>‹ 5 s</button>
                 <button className="piccolo" onClick={() => passo((fps ?? 30) * 5)}>5 s ›</button>
                 <span className="spazio" />
@@ -289,7 +289,7 @@ export default function VideoLocale({ partita }: { partita: any }) {
                   nomi={{ h: partita.home?.nome ?? "Casa",
                   a: partita.away?.nome ?? "Ospiti" }} />
                   )}
-                  <Azioni partita={partita} onVai={vaiAlFotogramma} />
+                  <Azioni partita={partita} onVai={vaiAlFotogramma} sets={setsPartita} />
               </aside>
             </div>
           )}
@@ -327,8 +327,6 @@ export default function VideoLocale({ partita }: { partita: any }) {
               </div>
 
               <div className="riga" style={{ marginTop: "var(--sp3)" }}>
-              <button className="piccolo" onClick={() => passo(-1)}>‹ 1 fot.</button>
-              <button className="piccolo" onClick={() => passo(1)}>1 fot. ›</button>
               <button className="piccolo" onClick={() => passo(-(fps ?? 30) * 5)}>‹ 5 s</button>
               <button className="piccolo" onClick={() => passo((fps ?? 30) * 5)}>5 s ›</button>
               <span className="spazio" />
@@ -399,7 +397,7 @@ export default function VideoLocale({ partita }: { partita: any }) {
               )}
               </Carta>
             ) : null}
-            destra={esteso ? <Azioni partita={partita} onVai={vaiAlFotogramma} /> : null}
+            destra={esteso ? <Azioni partita={partita} onVai={vaiAlFotogramma} sets={setsPartita} /> : null}
           />
         </>
       )}
@@ -411,54 +409,82 @@ export default function VideoLocale({ partita }: { partita: any }) {
  * La colonna delle azioni. Scorre per conto suo, cosi il video resta fermo:
  * se scorresse la pagina intera, ogni scelta rimanderebbe al punto di partenza.
  */
-function Azioni({ partita, onVai }: {
+function Azioni({ partita, onVai, sets }: {
   partita: any;
   /** `riproduci` distingue l'ispezione dal guardare: vedi `vaiAlFotogramma`. */
   onVai: (frame: number, riproduci?: boolean) => void;
+  /** I set che questa partita ha davvero avuto. */
+  sets: number[];
 }) {
-  const [set, setSet] = useState(1);
+  /*
+   * Un pannello per set, invece dei numeri da premere.
+   *
+   * Con i pulsanti si vedeva un set per volta e per cambiarlo bisognava
+   * ricordarsi quale si stava guardando. I pannelli mostrano subito quanti
+   * set ci sono, si possono tenerne aperti due per confrontarli, e il primo
+   * e aperto perche e quello da cui si comincia.
+   */
+  return (
+    <aside className="banco-azioni">
+      <div className="banco-azioni-testa">
+        <span className="etichetta">Azioni</span>
+      </div>
+      <div className="banco-azioni-elenco">
+        {sets.map((n, i) => (
+          <Pannello key={n} titolo={`Set ${n}`} chiave={`vv.azioni.set${n}`}
+                    apertoDiSuo={i === 0}>
+            <AzioniDelSet partita={partita} set={n} onVai={onVai} />
+          </Pannello>
+        ))}
+        {!sets.length && (
+          <p className="piccolo muto" style={{ padding: "var(--sp3)" }}>
+            L'analisi non dichiara nessun set.
+          </p>
+        )}
+      </div>
+    </aside>
+  );
+}
 
+/**
+ * Le azioni di un set.
+ *
+ * Componente a se perche **la richiesta parte solo quando il pannello si
+ * apre**: cinque set aperti insieme sarebbero cinque interrogazioni per
+ * dati che l'utente forse non guardera. Chiudendo e riaprendo, la risposta
+ * e gia in memoria.
+ */
+function AzioniDelSet({ partita, set, onVai }: {
+  partita: any; set: number;
+  onVai: (frame: number, riproduci?: boolean) => void;
+}) {
   const q = useQuery({
     queryKey: ["scambi", partita.id, set],
     queryFn: () => API.get<any[]>(`/matches/${partita.id}/analysis/rallies?set=${set}`),
   });
 
   return (
-    <aside className="banco-azioni">
-      <div className="banco-azioni-testa">
-        <span className="etichetta">Azioni</span>
-        <div className="riga" style={{ gap: 4 }}>
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button key={n} className={`piccolo ${set === n ? "primario" : ""}`}
-                    onClick={() => setSet(n)}>{n}</button>
-          ))}
+    <Stato caricamento={q.isLoading} errore={q.error} vuoto={q.data?.length === 0}
+           messaggioVuoto="Nessuna azione in questo set.">
+      {q.data?.map((a: any) => (
+        <div key={a.idx} className="azione">
+          <div className="azione-testa">
+            <span className="numerico grassetto">{a.hPt}-{a.aPt}</span>
+            <button className="piccolo" title={`Guarda l'azione dall'inizio (fotogramma ${a.frameStart})`}
+                    onClick={() => onVai(a.frameStart, true)}>guarda</button>
+          </div>
+          <div className="azione-eventi">
+            {(a.eventi as Evento[]).map((e) => (
+              <button key={e.idx} className={`tocco ${e.value ? "esito" : ""}`}
+                      title={`${SKILL[e.skill] ?? e.skill}${e.value ? " · " + e.value : ""} — fotogramma ${e.frame}`}
+                      onClick={() => onVai(e.frame, true)}>
+                <span className="tocco-skill">{e.skill}</span>
+                {e.jersey != null && <span className="tocco-maglia">{e.jersey}</span>}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
-
-      <div className="banco-azioni-elenco">
-        <Stato caricamento={q.isLoading} errore={q.error} vuoto={q.data?.length === 0}
-               messaggioVuoto="Nessuna azione in questo set.">
-          {q.data?.map((a: any) => (
-            <div key={a.idx} className="azione">
-              <div className="azione-testa">
-                <span className="numerico grassetto">{a.hPt}-{a.aPt}</span>
-                <button className="piccolo" title={`Guarda l'azione dall'inizio (fotogramma ${a.frameStart})`}
-                        onClick={() => onVai(a.frameStart, true)}>guarda</button>
-              </div>
-              <div className="azione-eventi">
-                {(a.eventi as Evento[]).map((e) => (
-                  <button key={e.idx} className={`tocco ${e.value ? "esito" : ""}`}
-                          title={`${SKILL[e.skill] ?? e.skill}${e.value ? " · " + e.value : ""} — fotogramma ${e.frame}`}
-                          onClick={() => onVai(e.frame, true)}>
-                    <span className="tocco-skill">{e.skill}</span>
-                    {e.jersey != null && <span className="tocco-maglia">{e.jersey}</span>}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </Stato>
-      </div>
-    </aside>
+      ))}
+    </Stato>
   );
 }
