@@ -30,10 +30,49 @@ const ETICHETTE: Record<string, string> = {
   clothingColor: "Maglia", body: "Corporatura", base: "Viso",
   features: "Tratti", accessories: "Accessori", clothing: "Abbigliamento",
   backgroundColor: "Sfondo", hairAccessories: "Fermagli", beard: "Barba",
-  top: "Capigliatura", eyewear: "Occhiali", nose_: "Naso",
+  top: "Capigliatura", eyewear: "Occhiali", head: "Testa", shape: "Forma",
+  style: "Tipo", face: "Viso", hat: "Cappello", hatColor: "Colore cappello",
+  clothesColor: "Colore maglia", accessoriesColor: "Colore accessori",
+  clothingGraphic: "Stampa", facialHairColor: "Colore barba",
 };
 
 const eColore = (k: string) => /color$/i.test(k);
+
+/**
+ * L'ordine in cui si compone una faccia: dal generale al dettaglio.
+ *
+ * Lo schema della libreria le elenca **in ordine alfabetico**, e cosi gli
+ * orecchini finivano prima dei capelli: si sceglieva un dettaglio di una
+ * faccia che non esisteva ancora. Si compone come si disegna — prima la
+ * forma, poi l'incarnato, poi i capelli, poi i tratti del viso, e in fondo
+ * cio che si aggiunge.
+ *
+ * Chi non e in elenco va in coda: se la libreria introduce una
+ * caratteristica nuova deve comparire comunque, in fondo, non sparire.
+ */
+const ORDINE = [
+  // La forma: cosa si sta guardando
+  "style", "base", "body", "shape", "head", "face",
+  // La pelle
+  "skinColor",
+  // I capelli
+  "hair", "top", "hairColor", "hairAccessories",
+  // I tratti del viso, dall'alto in basso
+  "eyebrows", "eyes", "nose", "mouth",
+  // La barba
+  "facialHair", "beard", "facialHairColor",
+  // Cio che si indossa
+  "glasses", "eyewear", "earrings", "accessories", "accessoriesColor",
+  "hat", "hatColor", "features",
+  // Il contorno
+  "clothing", "clothingGraphic", "clothingColor", "clothesColor",
+  "backgroundColor",
+];
+
+const posizione = (k: string) => {
+  const i = ORDINE.indexOf(k);
+  return i === -1 ? ORDINE.length : i;
+};
 
 export function AvatarPersonalizza({ stile, opzioni, onCambia }: {
   stile: string | null;
@@ -56,7 +95,9 @@ export function AvatarPersonalizza({ stile, opzioni, onCambia }: {
         colore: eColore(k),
         valori: (v.items?.enum ?? v.default ?? []) as string[],
       }))
-      .filter((p) => p.valori.length > 1);
+      .filter((p) => p.valori.length > 1)
+      .sort((a, b) => posizione(a.chiave) - posizione(b.chiave)
+                      || a.chiave.localeCompare(b.chiave));
   }, [stile]);
 
   if (!proprieta.length) {
