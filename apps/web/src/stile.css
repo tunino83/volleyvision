@@ -1239,3 +1239,21 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 .banco-azioni-elenco .pannello:last-child { border-bottom: 0; }
 .banco-azioni-elenco .pannello-testa { padding: var(--sp2) var(--sp3); }
 .banco-azioni-elenco .pannello-corpo { padding: 0 var(--sp3) var(--sp3); }
+
+/* Una finestra che copre lo schermo, con testa fissa e corpo che scorre.
+   Non un velo trasparente: qui si legge una tabella, e vedere il dettaglio
+   in trasparenza dietro i numeri li renderebbe piu difficili da leggere. */
+.finestra-piena {
+  position: fixed; inset: 0; z-index: 85;
+  background: var(--sfondo);
+  display: flex; flex-direction: column;
+}
+.finestra-piena-testa {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp3); padding: var(--sp3) var(--sp4);
+  border-bottom: 1px solid var(--bordo); flex: none;
+}
+.finestra-piena-corpo {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: var(--sp4);
+}

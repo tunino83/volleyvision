@@ -9,6 +9,7 @@ import Cambi from "../componenti/Cambi";
 import VideoLocale from "../componenti/VideoLocale";
 import Caricamento from "../componenti/Caricamento";
 import Lavorazione from "../componenti/Lavorazione";
+import { FinestraStatistiche } from "../componenti/FinestraStatistiche";
 
 const PASSI = ["WAITING", "PENDING", "RUNNING", "READY_FOR_PP", "READY"];
 const NOMI: Record<string, string> = {
@@ -20,6 +21,8 @@ export default function PartitaDettaglio() {
   const { id } = useParams();
   const qc = useQueryClient();
   const [scheda, setScheda] = useState<"dati" | "formazioni" | "cambi" | "video" | "locale">("dati");
+  /** Le statistiche in una finestra sopra, per non perdere il video scelto. */
+  const [statistiche, setStatistiche] = useState(false);
 
   const q = useQuery({
     queryKey: ["partita", id],
@@ -39,8 +42,20 @@ export default function PartitaDettaglio() {
             <p className="muto">{m.competition.nome} · {data(m.data)}{m.citta && ` · ${m.citta}`}</p>
           </div>
           <div className="riga">
-            {m.stato === "READY" && m.revisioneAnalisi &&
-              <Link className="bottone" to={`/partite/${m.id}/statistiche`}>Vedi statistiche</Link>}
+            {m.stato === "READY" && m.revisioneAnalisi && (
+              /*
+               * Si apre in una finestra, non in un'altra pagina.
+               *
+               * Il video collegato e un `File` scelto dall'utente: vive nello
+               * stato del componente, e nessuna navigazione puo conservarlo.
+               * Andando alle statistiche e tornando indietro bisognava
+               * riselezionarlo ogni volta — proprio mentre si stava
+               * lavorando su quella partita.
+               */
+              <button className="bottone" onClick={() => setStatistiche(true)}>
+                Vedi statistiche
+              </button>
+            )}
             <Pillola stato={m.stato} />
           </div>
         </div>
@@ -106,6 +121,13 @@ export default function PartitaDettaglio() {
         {scheda === "video" && <Caricamento partita={m} />}
         {scheda === "locale" && <VideoLocale partita={m} />}
       </>}
+
+      {/* Dentro la guardia: senza partita non c'e `m.id` da leggere, e la
+          schermata cadrebbe mentre carica o se la richiesta fallisce. */}
+      {m && (
+        <FinestraStatistiche aperta={statistiche} onChiudi={() => setStatistiche(false)}
+                             id={m.id} titolo={`${m.home.nome} — ${m.away.nome}`} />
+      )}
     </Stato>
   );
 }

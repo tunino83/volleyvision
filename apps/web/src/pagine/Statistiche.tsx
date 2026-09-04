@@ -34,8 +34,24 @@ const SKILL: Record<string, string> = {
 };
 const ESITO: Record<string, string> = { Point: "Punto", Error: "Errore", Blocked: "Murato" };
 
-export default function Statistiche() {
-  const { id } = useParams();
+/**
+ * Le statistiche di una partita.
+ *
+ * Si apre come pagina propria o **dentro una finestra**, sopra il dettaglio.
+ * La differenza non e estetica: aprendola come pagina il video collegato
+ * andrebbe perduto — e un `File` scelto dall'utente, che vive nello stato del
+ * componente e nessuna navigazione puo conservare. Tornando indietro
+ * bisognerebbe riselezionarlo, ogni volta.
+ *
+ * Da qui i due parametri: `id` per non dipendere dall'indirizzo, e
+ * `inFinestra` per togliere il "torna alla partita", che dentro una finestra
+ * non ha senso — si chiude, non si torna.
+ */
+export default function Statistiche({ id: idProp, inFinestra }: {
+  id?: string; inFinestra?: boolean;
+} = {}) {
+  const params = useParams();
+  const id = idProp ?? params.id;
   const [set, setSet] = useState<number | null>(null);
   const [vista, setVista] = useState<"squadre" | "giocatori">("squadre");
   const [aperto, setAperto] = useState<{ titolo: string; indici: number[] } | null>(null);
@@ -73,7 +89,7 @@ export default function Statistiche() {
   if (assente) {
     return (
       <>
-        <Indietro a={`/partite/${id}`} testo="Torna alla partita" />
+        {!inFinestra && <Indietro a={`/partite/${id}`} testo="Torna alla partita" />}
         <h1>Statistiche</h1>
         <div className="avviso attenzione">
           <div className="grassetto">Questa partita non ha ancora i dati dell'analisi.</div>
@@ -90,7 +106,7 @@ export default function Statistiche() {
   return (
     <Stato caricamento={q.isLoading} errore={q.error}>
       {d && <>
-        <Indietro a={`/partite/${id}`} testo="Torna alla partita" />
+        {!inFinestra && <Indietro a={`/partite/${id}`} testo="Torna alla partita" />}
         <div className="riga-sp">
           <h1>Statistiche</h1>
           <span className="piccolo muto">
