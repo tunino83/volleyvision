@@ -122,6 +122,32 @@ async function rimuoviPrecedenti() {
 async function main() {
   const rifai = process.argv.includes("--rifai");
 
+  /*
+   * `--solo-reale`: aggiunge la partita vera senza rifare i mondi sintetici.
+   *
+   * Serve perche i dati sintetici sono ~100 MB di posizioni, e su un database
+   * remoto scriverli richiede minuti: se il collegamento cade a meta, la
+   * partita reale — che si crea per ultima — non arriva mai. Con questa
+   * opzione la si aggiunge da sola, agli utenti che ci sono gia.
+   */
+  if (process.argv.includes("--solo-reale")) {
+    const utenti = await prisma.user.findMany({
+      where: { email: { in: MONDI.map((m) => EMAIL(m.nome)) } },
+      select: { id: true, nome: true },
+      orderBy: { creatoIl: "asc" },
+    });
+    if (!utenti.length) {
+      console.error("Nessun utente dimostrativo: esegui prima il seed completo.");
+      process.exit(1);
+    }
+    // Si toglie la precedente, se c'e: rieseguire deve sostituire.
+    await prisma.competition.deleteMany({
+      where: { nome: "Volleyball Nations League", ownerId: utenti[0].id } });
+    await partitaReale(utenti);
+    await prisma.$disconnect();
+    return;
+  }
+
   const esistenti = await prisma.user.count({
     where: { email: { in: MONDI.map((m) => EMAIL(m.nome)) } } });
   if (esistenti && !rifai) {
@@ -169,19 +195,35 @@ async function main() {
       const t = await prisma.team.create({
         data: { ownerId: utente.id, nome: nomeSq, stagione: mondo.stagione } });
 
+      /*
+       * In blocco, non una riga per volta.
+       *
+       * Erano due `create` per giocatore: 720 viaggi fino al database per
+       * cinque utenti. In locale non si nota, su un database remoto sono
+       * minuti — e se il seed viene interrotto, cio che si crea per ultimo
+       * (la partita reale) non arriva mai. Con `createMany` restano due
+       * chiamate per squadra.
+       *
+       * Gli identificativi si generano qui perche `createMany` non li
+       * restituisce, e servono subito per collegare i giocatori alle persone.
+       */
+      const persone: { id: string; ownerId: string; cognome: string; nome: string }[] = [];
+      const rosa: { id: string; teamId: string; personId: string; numeroMaglia: number;
+                    cognome: string; nome: string; ruolo: string; libero: boolean }[] = [];
       for (let i = 0; i < 12; i++) {
         // Lo scarto per utente e per squadra evita che i dodici giocatori
         // della prima squadra siano gli stessi dodici di tutte le altre.
         const cognome = COGNOMI[(i + iS * 5 + iM * 7) % COGNOMI.length];
         const nome = NOMI[(i * 3 + iS + iM * 4) % NOMI.length];
         const ruolo = RUOLI[i % RUOLI.length];
-        const p = await prisma.person.create({
-          data: { ownerId: utente.id, cognome, nome } });
-        await prisma.teamPlayer.create({
-          data: { teamId: t.id, personId: p.id, numeroMaglia: i + 1,
-                  cognome, nome, ruolo, libero: coerente(ruolo) },
-        });
+        const idPersona = `seed_p_${iM}_${iS}_${i}`;
+        persone.push({ id: idPersona, ownerId: utente.id, cognome, nome });
+        rosa.push({ id: `seed_tp_${iM}_${iS}_${i}`, teamId: t.id, personId: idPersona,
+                    numeroMaglia: i + 1, cognome, nome, ruolo, libero: coerente(ruolo) });
       }
+      await prisma.person.createMany({ data: persone });
+      await prisma.teamPlayer.createMany({ data: rosa });
+
       squadre.push(await prisma.team.findUniqueOrThrow({
         where: { id: t.id }, include: { giocatori: true } }));
     }
