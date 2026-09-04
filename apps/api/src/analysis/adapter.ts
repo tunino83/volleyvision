@@ -126,6 +126,8 @@ export function adatta(matchId: string, revision: number, ing: IngressoFornitore
      * `x -> 9-x`, `y -> 18-y` — le due squadre si separano perfettamente:
      * casa mediana 13,1 (0% sotto meta campo), ospiti mediana 5,4 (100%).
      *
+     * **Non si applica sempre**: quando serve lo decide la misura, piu sotto.
+     *
      * Il campo e 9 x 18: le due costanti sono quelle, non parametri.
      */
     const CAMPO_X = 9, CAMPO_Y = 18;
@@ -162,12 +164,39 @@ export function adatta(matchId: string, revision: number, ing: IngressoFornitore
           const q = ruota ? specchia(q0) : q0;
           return [{ n: Math.round(p.n), x: q.x, y: q.y }];
         });
+      // Si converte senza specchiare: la decisione viene dopo, sui dati.
       frames.push({
         f: f.f1,
         h: conv(f.hP, H1, "g1", false),
-        // La seconda ripresa e girata: si porta nel sistema della prima.
-        a: conv(f.aP, H2, "g2", true),
+        a: conv(f.aP, H2, "g2", false),
       });
+    }
+
+    /*
+     * SPECCHIARE O NO: lo decide la misura, non una convenzione.
+     *
+     * Nei dati veri del fornitore le due riprese vengono da estremita opposte
+     * e ciascuna omografia ha l'origine nel proprio angolo: convertendo alla
+     * lettera, **le due squadre finiscono nella stessa meta campo**. Ruotando
+     * di mezzo giro cio che arriva dalla seconda, si separano.
+     *
+     * Ma non vale per tutte le sorgenti: i dati sintetici usano un sistema
+     * solo, e specchiarli produrrebbe esattamente il difetto che la
+     * specchiatura doveva togliere. Assumere l'uno o l'altro caso rompe
+     * l'altro — quindi si guarda dove sono finite davvero le squadre.
+     *
+     * Se stanno dalla stessa parte della rete, la seconda va girata.
+     */
+    const mediana = (xs: number[]) =>
+      xs.length ? xs.slice().sort((p, q) => p - q)[Math.floor(xs.length / 2)] : null;
+    const yCasa = mediana(frames.flatMap((x) => x.h.map((p) => p.y)));
+    const yOspiti = mediana(frames.flatMap((x) => x.a.map((p) => p.y)));
+
+    if (yCasa != null && yOspiti != null
+        && (yCasa < CAMPO_Y / 2) === (yOspiti < CAMPO_Y / 2)) {
+      for (const f of frames) f.a = f.a.map((p) => ({ n: p.n, ...specchia(p) }));
+      avvisi.push("Le due riprese hanno sistemi di coordinate opposti: "
+                + "le posizioni della squadra ospite sono state ruotate.");
     }
 
     const span = (frames.at(-1)?.f ?? 0) - (frames[0]?.f ?? 0);

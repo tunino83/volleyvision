@@ -412,7 +412,33 @@ function generaPosizioni(
   const out: any[] = [];
   const passo = 2;   // un fotogramma ogni due: raffica fitta ma non enorme
 
-  const disturbo = () => (c.next() - 0.5) * 1.6;
+  /*
+   * I giocatori si SPOSTANO, non sfarfallano.
+   *
+   * Prima lo scostamento dal posto in campo si ridisegnava a caso a ogni
+   * fotogramma: indipendente dal precedente, fino a 1,6 m di salto in un
+   * quindicesimo di secondo. Sul campo bidimensionale si vedeva quello che
+   * era davvero — rumore, non movimento: velocita mediana 12 m/s, con punte
+   * di 20, contro i 2-5 m/s di un pallavolista vero.
+   *
+   * Ora lo scostamento **persiste** fra un fotogramma e l'altro e cambia di
+   * poco: un vagabondaggio lento, trattenuto entro un raggio. E la differenza
+   * fra un giocatore che si muove e uno che si teletrasporta.
+   */
+  const PASSO_M = 0.11;    // quanto si sposta al massimo fra due rilevamenti
+  const RAGGIO_M = 1.0;    // quanto puo allontanarsi dal proprio posto
+  const scostamenti = new Map<string, { dx: number; dy: number }>();
+
+  const scostamento = (chiave: string) => {
+    const v = scostamenti.get(chiave) ?? { dx: 0, dy: 0 };
+    const stretto = (n: number) => Math.max(-RAGGIO_M, Math.min(RAGGIO_M, n));
+    const nuovo = {
+      dx: stretto(v.dx + (c.next() - 0.5) * 2 * PASSO_M),
+      dy: stretto(v.dy + (c.next() - 0.5) * 2 * PASSO_M),
+    };
+    scostamenti.set(chiave, nuovo);
+    return nuovo;
+  };
 
   for (let f = da; f <= a; f += passo) {
     const lato = (rosa: number[], inv: number[][], chiave: "g1" | "g2", offsetY: number) =>
@@ -424,7 +450,8 @@ function generaPosizioni(
             : { n, [chiave]: [null, null], [chiave === "g1" ? "g2" : "g1"]: null };
         }
         const [mx, my] = POSTI[i];
-        const [px, py] = applica(inv, mx + disturbo(), my + offsetY + disturbo());
+        const d2 = scostamento(`${chiave}:${n}`);
+        const [px, py] = applica(inv, mx + d2.dx, my + offsetY + d2.dy);
         return {
           n, g1: chiave === "g1" ? [Math.round(px), Math.round(py)] : null,
           g2: chiave === "g2" ? [Math.round(px), Math.round(py)] : null,
