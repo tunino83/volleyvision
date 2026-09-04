@@ -35,9 +35,51 @@ export const SOSPESO = "SOSPESO_SECONDO_PIANO";
 
 const TENTATIVI = 4;
 
+/**
+ * Tiene acceso lo schermo per la durata del caricamento.
+ *
+ * **La causa piu frequente di interruzione non e l'utente che esce
+ * dall'applicazione: e lo schermo che si spegne da solo dopo trenta
+ * secondi.** Un video da 5 GB richiede mezz'ora su una buona rete mobile,
+ * due ore su una lenta: senza questo, il caricamento si ferma decine di
+ * volte e riparte solo quando qualcuno tocca il telefono.
+ *
+ * E un'API del browser, quindi vale anche dentro il guscio Android: non
+ * serve codice nativo per risolvere il problema piu comune.
+ *
+ * Non tutti i browser la offrono, e il sistema puo negarla (batteria
+ * scarica, risparmio energetico): in quel caso si carica lo stesso, con lo
+ * schermo che si spegne come prima. Non e un motivo per fermarsi.
+ */
+async function tieniAccesoLoSchermo(): Promise<() => void> {
+  const wl = (navigator as any).wakeLock;
+  if (!wl?.request) return () => {};
+  try {
+    let blocco = await wl.request("screen");
+
+    // Il sistema lo revoca quando l'applicazione perde il primo piano: al
+    // ritorno va richiesto, altrimenti resta spento per il resto del
+    // caricamento senza che nessuno se ne accorga.
+    const alRitorno = async () => {
+      if (document.visibilityState !== "visible") return;
+      try { blocco = await wl.request("screen"); } catch { /* negato */ }
+    };
+    document.addEventListener("visibilitychange", alRitorno);
+
+    return () => {
+      document.removeEventListener("visibilitychange", alRitorno);
+      try { blocco?.release?.(); } catch { /* gia rilasciato */ }
+    };
+  } catch {
+    return () => {};
+  }
+}
+
 export function creaTrasferimento(p: ParametriTrasferimento): Trasferimento {
   return {
     async invia(file, { apriSessione, onProgresso, onRipresa, segnale }: OpzioniInvio) {
+      const rilasciaSchermo = await tieniAccesoLoSchermo();
+      try {
       const s = await apriSessione();
       const blocco = Math.min(s.chunkBytes, p.chunkMax);
 
@@ -64,6 +106,11 @@ export function creaTrasferimento(p: ParametriTrasferimento): Trasferimento {
 
       await API.post(`/uploads/${s.uploadId}/complete`, {});
       return { uploadId: s.uploadId };
+      } finally {
+        // Sempre, anche se il caricamento fallisce o viene annullato:
+        // lasciare lo schermo bloccato scaricherebbe la batteria a vuoto.
+        rilasciaSchermo();
+      }
     },
   };
 }

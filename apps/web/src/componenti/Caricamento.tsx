@@ -62,9 +62,9 @@ export default function Caricamento({ partita }: { partita: any }) {
 
       {!piattaforma.trasferimentoInSecondoPiano && (
         <div className="avviso attenzione">
-          Il caricamento avviene <strong>solo con l'applicazione aperta</strong>. Se
-          esci o blocchi lo schermo si ferma: riaprendo, riprende dal punto
-          raggiunto senza ricominciare.
+          Il caricamento avviene <strong>solo con l'applicazione aperta</strong>.
+          Lo schermo resta acceso da solo finche dura. Se esci si ferma:
+          riaprendo, riprende dal punto raggiunto senza ricominciare.
         </div>
       )}
 
