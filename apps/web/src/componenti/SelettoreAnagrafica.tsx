@@ -30,6 +30,7 @@ export function SelettoreAnagrafica({
 }) {
   const qc = useQueryClient();
   const [nuovo, setNuovo] = useState(false);
+  const [filtro, setFiltro] = useState("");
   const [nome, setNome] = useState("");
   const [stagione, setStagione] = useState(stagioneCorrente());
   const [err, setErr] = useState<ApiError | null>(null);
@@ -73,22 +74,53 @@ export function SelettoreAnagrafica({
     );
   }
 
+  /*
+   * Pastiglie e non un menu a tendina.
+   *
+   * Una `select` su telefono apre un elenco a schermo intero che copre il
+   * modulo: si sceglie alla cieca, senza piu vedere cosa si stava
+   * compilando. E anche da computer nasconde le opzioni finche non la si
+   * apre, mentre qui sono in genere poche — le proprie squadre, i propri
+   * campionati — e stanno tutte sotto gli occhi.
+   *
+   * Sopra una certa quantita un campo di ricerca torna utile: si filtra
+   * invece di scorrere. Sotto, sarebbe un comando in piu da ignorare.
+   */
+  const CON_RICERCA = 8;
+  const cerca = filtro.trim().toLowerCase();
+  const visibili = cerca
+    ? elenco.filter((v) => `${v.nome} ${v.stagione ?? ""}`.toLowerCase().includes(cerca))
+    : elenco;
+
   return (
     <Campo etichetta={etichetta} errore={errore}>
-      <div className="riga">
-        <select value={valore} onChange={(e) => {
-          if (e.target.value === "__nuovo__") { setNuovo(true); return; }
-          onCambia(e.target.value);
-        }}>
-          <option value="">— seleziona —</option>
-          {elenco.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.nome}{v.stagione ? ` (${v.stagione})` : ""}
-            </option>
-          ))}
-          <option value="__nuovo__">+ non e in elenco: creala…</option>
-        </select>
+      {elenco.length > CON_RICERCA && (
+        <input className="scelta-ricerca" value={filtro} placeholder="Cerca…"
+               onChange={(e) => setFiltro(e.target.value)} />
+      )}
+
+      <div className="scelte">
+        {visibili.map((v) => (
+          <button key={v.id} type="button"
+                  className={`scelta ${valore === v.id ? "scelta-attiva" : ""}`}
+                  aria-pressed={valore === v.id}
+                  onClick={() => onCambia(valore === v.id ? "" : v.id)}>
+            <span className="scelta-nome">{v.nome}</span>
+            {v.stagione && <span className="scelta-nota">{v.stagione}</span>}
+          </button>
+        ))}
+
+        {/* Creare non e scegliere: si distingue anche a colpo d'occhio. */}
+        <button type="button" className="scelta scelta-nuova" onClick={() => setNuovo(true)}>
+          + Crea
+        </button>
       </div>
+
+      {cerca && !visibili.length && (
+        <p className="piccolo muto" style={{ margin: "6px 0 0" }}>
+          Nessuna corrispondenza. Puoi crearla con <b>+ Crea</b>.
+        </p>
+      )}
     </Campo>
   );
 }

@@ -166,6 +166,17 @@ function BarraAlta() {
           <I.Campanella d={15} /><span className="badge">{notif.count}</span>
         </button>
       )}
+      {/*
+        * Il profilo sta qui perche su telefono la colonna laterale non c'e,
+        * e la barra in basso porta le sezioni del lavoro — squadre, partite,
+        * statistiche — non le cose che riguardano la propria utenza.
+        * Senza questo, dal telefono al profilo non si arrivava affatto.
+        */}
+      <NavLink to="/profilo"
+               className={({ isActive }) => `icona-solo ${isActive ? "attivo" : ""}`}
+               title="Il tuo profilo" aria-label="Il tuo profilo">
+        <I.Persona d={18} />
+      </NavLink>
       <InterruttoreTema />
       <PulsanteEsci esci={esci} />
     </header>

@@ -22,6 +22,17 @@
    ========================================================================== */
 
 :root {
+  /*
+   * `--testo` e `--testo-muto` non erano dichiarati, ma una ventina di regole
+   * li usavano: quelle regole non coloravano niente e il testo ereditava dal
+   * genitore. Si vedeva poco proprio perche il colore ereditato e quasi
+   * sempre quello giusto — ed e il motivo per cui e passato inosservato.
+   *
+   * Sono sinonimi di `--inchiostro` e `--muto`, definiti una volta qui: cosi
+   * seguono i due temi senza doverli ridichiarare in ognuno.
+   */
+  --testo: var(--inchiostro);
+  --testo-muto: var(--muto);
   --f-display: "Barlow Condensed", "Oswald", "Arial Narrow", system-ui, sans-serif;
   --f-testo: "Inter", "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
 
@@ -1269,4 +1280,65 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 .finestra-piena-corpo {
   flex: 1; min-height: 0; overflow-y: auto;
   padding: var(--sp4);
+}
+
+/* Scelta fra poche voci: pastiglie invece di un menu a tendina.
+   Su telefono una select apre un elenco a schermo intero che copre il
+   modulo — si sceglie senza piu vedere cosa si stava compilando. */
+.scelte { display: flex; flex-wrap: wrap; gap: 6px; }
+.scelta {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 8px 12px; cursor: pointer;
+  background: var(--carta-alt); color: var(--testo);
+  border: 1px solid var(--bordo); border-radius: 999px;
+  font: inherit; font-size: 13px; line-height: 1.2;
+  /* Su telefono il bersaglio deve restare premibile col pollice. */
+  min-height: 38px;
+}
+.scelta:hover { border-color: var(--palla); }
+.scelta-attiva {
+  border-color: var(--palla); color: var(--palla);
+  background: color-mix(in srgb, var(--palla) 12%, transparent);
+  font-weight: 600;
+}
+.scelta-nota { font-size: 11px; color: var(--testo-muto); }
+.scelta-attiva .scelta-nota { color: inherit; opacity: .8; }
+/* Creare non e scegliere: il tratteggio lo dice senza una parola in piu. */
+.scelta-nuova { border-style: dashed; color: var(--testo-muto); }
+.scelta-ricerca { width: 100%; margin-bottom: 8px; }
+
+/* La sintesi in cima alla home: due riquadri affiancati che si impilano. */
+.sintesi-home {
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--sp3); margin: var(--sp4) 0;
+}
+@media (max-width: 760px) { .sintesi-home { grid-template-columns: 1fr; } }
+.sintesi-numero {
+  font-family: "Barlow Condensed", system-ui, sans-serif;
+  font-size: 40px; font-weight: 700; line-height: 1; color: var(--palla);
+  margin: 4px 0 6px;
+}
+
+/* Le squadre in riga, non in riquadri: sono un nome e due numeri, e in
+   griglia occupavano mezza schermata per dire poco. */
+.elenco-squadre { padding: 0; overflow: hidden; }
+.riga-squadra {
+  display: grid; grid-template-columns: auto 1fr auto auto;
+  align-items: center; gap: var(--sp3);
+  width: 100%; padding: 11px var(--sp3);
+  background: transparent; border: 0; border-bottom: 1px solid var(--bordo);
+  color: var(--inchiostro); text-align: left; cursor: pointer; font: inherit;
+}
+.riga-squadra:last-child { border-bottom: 0; }
+.riga-squadra:hover { background: var(--carta-alt); }
+.riga-squadra:hover svg { color: var(--palla); }
+.riga-squadra-nome { font-weight: 600; min-width: 0; }
+.riga-squadra-nome em { font-style: normal; font-weight: 400; }
+
+/* Su telefono i numeri vanno sotto: in riga stringerebbero il nome fino a
+   troncarlo, e il nome e la cosa che si cerca. */
+@media (max-width: 620px) {
+  .riga-squadra { grid-template-columns: auto 1fr; row-gap: 2px; }
+  .riga-squadra-numeri { grid-column: 2; }
+  .riga-squadra > .piccolo.muto:not(.riga-squadra-numeri) { grid-column: 2; }
 }
