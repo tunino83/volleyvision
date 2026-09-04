@@ -39,7 +39,7 @@ export class TeamsService {
       // L'avatar sta sulla persona: la stessa faccia segue il giocatore fra
       // squadre e stagioni, che e il motivo per cui non sta sulla riga.
       include: { person: { select: { id: true, cognome: true, nome: true,
-                                     avatarStile: true, avatarSeme: true,
+                                     avatarStile: true, avatarSeme: true, avatarOpzioniJson: true,
                                      // Solo la data: i byte restano fuori dall'album.
                                      foto: { select: { aggiornataIl: true } } } } },
     });
@@ -55,6 +55,12 @@ export class TeamsService {
         ...r.person,
         foto: CONFIG.funzioni.fotoPersone && r.person.foto
               ? r.person.foto.aggiornataIl.getTime() : null,
+        // Dal testo all'oggetto: il client si aspetta le scelte gia
+        // interpretate, non una stringa da aprire lui.
+        avatarOpzioni: (() => {
+          if (!r.person.avatarOpzioniJson) return null;
+          try { return JSON.parse(r.person.avatarOpzioniJson); } catch { return null; }
+        })(),
       },
     }));
 

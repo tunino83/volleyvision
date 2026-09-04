@@ -43,7 +43,7 @@ export const NOME_API: Record<Stile, string> = {
 
 const PREDEFINITO: Stile = "personas";
 
-export function Avatar({ seme, stile, d = 64, className, personId, foto }: {
+export function Avatar({ seme, stile, d = 64, className, personId, foto, opzioni }: {
   /** Di norma il nome della persona. */
   seme: string;
   stile?: string | null;
@@ -56,6 +56,12 @@ export function Avatar({ seme, stile, d = 64, className, personId, foto }: {
    * Non l'immagine: **i byte non viaggiano mai con l'anagrafica.**
    */
   foto?: number | null;
+  /**
+   * Le scelte fatte a mano: `{ hair: ["long"], skinColor: ["eeb4a4"] }`.
+   * Un elenco di un solo valore fissa quella caratteristica; senza, la
+   * libreria la pesca col seme come prima.
+   */
+  opzioni?: Record<string, string[]> | null;
 }) {
   const dataUri = useMemo(() => {
     const scelto = (stile && MAPPA[stile]) || PREDEFINITO;
@@ -63,12 +69,21 @@ export function Avatar({ seme, stile, d = 64, className, personId, foto }: {
     return createAvatar(collezione, {
       seed: seme || "volley",
       size: d,
+      /*
+       * Le scelte a mano si sovrappongono al sorteggio.
+       *
+       * Vanno DOPO le altre opzioni, altrimenti verrebbero sovrascritte da
+       * cio che sta sotto. Un valore che questo stile non conosce viene
+       * ignorato dalla libreria — utile, perche cambiando stile le scelte
+       * vecchie non fanno danno: semplicemente non si applicano.
+       */
+      ...(opzioni ?? {}),
       // Sfondo trasparente: la scheda dietro cambia colore col tema, e un
       // fondo cotto dentro l'immagine stonerebbe in uno dei due.
       backgroundColor: [],
       radius: 50,
     }).toDataUri();
-  }, [seme, stile, d]);
+  }, [seme, stile, d, opzioni]);
 
   const [srcFoto, setSrcFoto] = useState<string | null>(null);
   useEffect(() => {

@@ -110,6 +110,8 @@ export class SchedaService {
       persona: {
         id: persona.id, cognome: persona.cognome, nome: persona.nome,
         avatarStile: persona.avatarStile, avatarSeme: persona.avatarSeme,
+        avatarOpzioni: persona.avatarOpzioniJson
+          ? (() => { try { return JSON.parse(persona.avatarOpzioniJson!); } catch { return null; } })() : null,
         foto: CONFIG.funzioni.fotoPersone && persona.foto
               ? persona.foto.aggiornataIl.getTime() : null,
       },

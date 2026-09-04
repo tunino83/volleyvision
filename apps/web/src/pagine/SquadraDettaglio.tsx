@@ -5,6 +5,7 @@ import { API, type ApiError } from "../api/client";
 import { Campo, Carta, Indietro, Stato } from "../componenti/Ui";
 import { Avatar, NOME_API, STILI, type Stile } from "../componenti/Avatar";
 import { preparaFoto, byteDiDataUri } from "../componenti/ritaglia";
+import { AvatarPersonalizza } from "../componenti/AvatarPersonalizza";
 import { useFunzioni } from "../funzioni";
 import { Maglia, MagliaPiena, Persona } from "../componenti/Icone";
 
@@ -31,7 +32,8 @@ interface Giocatore {
   person?: { id: string; cognome: string; nome: string;
              avatarStile: string | null; avatarSeme: string | null;
              /** Versione della fotografia, oppure null se non c'e. */
-             foto?: number | null } | null;
+             foto?: number | null;
+             avatarOpzioni?: Record<string, string[]> | null } | null;
 }
 
 export default function SquadraDettaglio() {
@@ -162,6 +164,7 @@ function Scheda({ g, soloLettura, onApri }: {
          title={soloLettura ? undefined : "Modifica"}>
       <div className="figurina-numero">{g.numeroMaglia}</div>
       <Avatar seme={seme} stile={g.person?.avatarStile} d={84} className="figurina-volto"
+              opzioni={g.person?.avatarOpzioni}
               personId={g.person?.id} foto={g.person?.foto} />
       <div className="figurina-nome">{g.cognome}</div>
       <div className="figurina-sottonome">{g.nome}</div>
@@ -204,6 +207,10 @@ function Figurina({ squadraId, g, nuova, onFatto, onChiudi }: {
   });
   const [stile, setStile] = useState<string | null>(g?.person?.avatarStile ?? null);
   const [seme, setSeme] = useState<string | null>(g?.person?.avatarSeme ?? null);
+  const [opzioni, setOpzioni] = useState<Record<string, string[]>>(
+    g?.person?.avatarOpzioni ?? {});
+  /** I comandi per comporre la faccia: chiusi finche non servono. */
+  const [componi, setComponi] = useState(false);
   const [err, setErr] = useState<ApiError | null>(null);
   /** La foto scelta ora e non ancora salvata; `null` significa "toglila". */
   const [fotoNuova, setFotoNuova] = useState<string | null | undefined>(undefined);
@@ -226,7 +233,12 @@ function Figurina({ squadraId, g, nuova, onFatto, onChiudi }: {
       else await API.patch(`/teams/${squadraId}/players/${g!.id}`, corpo);
       // L'avatar viaggia a parte: sta sulla persona, non sulla riga di roster.
       if (personId) {
-        await API.patch(`/persons/${personId}/avatar`, { avatarStile: stile, avatarSeme: seme });
+        await API.patch(`/persons/${personId}/avatar`, {
+          avatarStile: stile, avatarSeme: seme,
+          // Oggetto vuoto significa "nessuna scelta": si manda `null`, che
+          // cancella, invece di salvare un oggetto senza contenuto.
+          avatarOpzioni: Object.keys(opzioni).length ? opzioni : null,
+        });
         // `undefined` = non toccata. `null` = da togliere. Stringa = la nuova.
         if (fotoNuova === null) await API.del(`/persons/${personId}/foto`);
         else if (fotoNuova) await API.put(`/persons/${personId}/foto`, { dataUri: fotoNuova });
@@ -259,7 +271,7 @@ function Figurina({ squadraId, g, nuova, onFatto, onChiudi }: {
           {fotoNuova
             ? <img src={fotoNuova} width={96} height={96} alt=""
                    style={{ borderRadius: "50%", objectFit: "cover", display: "block" }} />
-            : <Avatar seme={semeVisto} stile={stile} d={96}
+            : <Avatar seme={semeVisto} stile={stile} d={96} opzioni={opzioni}
                       personId={personId ?? undefined}
                       foto={fotoNuova === null ? null : g?.person?.foto} />}
 
@@ -297,6 +309,10 @@ function Figurina({ squadraId, g, nuova, onFatto, onChiudi }: {
                 </p>
               )}
 
+              {componi && (
+                <AvatarPersonalizza stile={stile} opzioni={opzioni} onCambia={setOpzioni} />
+              )}
+
               {/* Gli avatar disegnati restano: sono cio che si vede senza foto,
                   e tornano se la foto viene tolta. */}
               <div className="album-stili">
@@ -304,7 +320,7 @@ function Figurina({ squadraId, g, nuova, onFatto, onChiudi }: {
                   <button key={st} type="button"
                           className={`stile ${NOME_API[st] === stile ? "scelto" : ""}`}
                           title={st} onClick={() => setStile(NOME_API[st])}>
-                    <Avatar seme={semeVisto} stile={NOME_API[st]} d={30} />
+                    <Avatar seme={semeVisto} stile={NOME_API[st]} d={30} opzioni={opzioni} />
                   </button>
                 ))}
               </div>
@@ -316,6 +332,17 @@ function Figurina({ squadraId, g, nuova, onFatto, onChiudi }: {
                 {seme && (
                   <button type="button" className="piccolo" onClick={() => setSeme(null)}>
                     Dal nome
+                  </button>
+                )}
+                <button type="button" className={`piccolo ${componi ? "attivo" : ""}`}
+                        onClick={() => setComponi((v) => !v)}
+                        title="Scegli capelli, occhi, incarnato invece di affidarti al caso">
+                  Componi
+                </button>
+                {Object.keys(opzioni).length > 0 && (
+                  <button type="button" className="piccolo" onClick={() => setOpzioni({})}
+                          title="Torna alla faccia generata dal seme">
+                    Azzera scelte
                   </button>
                 )}
               </div>

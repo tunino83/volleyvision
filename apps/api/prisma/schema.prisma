@@ -138,6 +138,14 @@ model Person {
   /// La fotografia, se c'e. Ha la precedenza sull'avatar disegnato.
   foto        PersonaFoto?
 
+  /// Scelte fatte a mano sull'avatar: `{"hair":["long"],"skinColor":["eeb4a4"]}`.
+  ///
+  /// Le opzioni **dipendono dallo stile** — `personas` ha naso e barba,
+  /// `adventurer` occhiali e sopracciglia — quindi non si possono elencare
+  /// qui: si tengono come JSON e si convalidano contro lo schema che la
+  /// libreria espone a runtime. Nullo: la faccia resta quella del seme.
+  avatarOpzioniJson String?
+
   /// Seme da cui la libreria disegna la faccia. Nullo: si deriva dal nome,
   /// cosi l'avatar c'e comunque ed e sempre lo stesso per quella persona.
   avatarSeme  String?

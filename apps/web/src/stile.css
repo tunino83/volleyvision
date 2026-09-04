@@ -1209,3 +1209,22 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
   .esteso-sinistra .pannello { flex: 1 1 240px; }
   .esteso-centro .lettore { max-height: 55vh; }
 }
+
+/* I comandi per comporre l'avatar: una riga per caratteristica, etichetta
+   a sinistra e scelta a destra. Stretti, stanno in una colonna. */
+.avatar-comporre { display: grid; gap: 6px; margin: var(--sp3) 0; width: 100%; }
+.avatar-comporre-riga {
+  display: grid; grid-template-columns: 5.5rem 1fr;
+  align-items: center; gap: 8px;
+}
+.avatar-comporre-riga select { width: 100%; font-size: 11px; padding: 2px 4px; }
+
+/* I colori come pastiglie e non in un menu: "#e15c66" non dice niente a
+   nessuno, il colore si riconosce guardandolo. */
+.avatar-colori { display: flex; flex-wrap: wrap; gap: 4px; }
+.avatar-colore {
+  width: 17px; height: 17px; border-radius: 50%; padding: 0;
+  border: 2px solid transparent; cursor: pointer;
+}
+.avatar-colore.scelto { border-color: var(--testo); }
+.avatar-colore:hover { border-color: var(--palla); }

@@ -28,7 +28,7 @@ interface Voce {
 interface Scheda {
   persona: { id: string; cognome: string; nome: string;
              avatarStile: string | null; avatarSeme: string | null;
-             foto: number | null };
+             foto: number | null; avatarOpzioni?: Record<string, string[]> | null };
   maglie: number[];
   squadre: string[];
   totali: Voce;
@@ -58,6 +58,7 @@ export default function PersonaScheda() {
         <div className="scheda-testa">
           <Avatar seme={d.persona.avatarSeme || `${d.persona.cognome} ${d.persona.nome}`}
                   stile={d.persona.avatarStile} d={92} className="scheda-volto"
+                  opzioni={d.persona.avatarOpzioni}
                   personId={d.persona.id} foto={d.persona.foto} />
           <div>
             <h1 style={{ marginBottom: 4 }}>{d.persona.cognome} {d.persona.nome}</h1>

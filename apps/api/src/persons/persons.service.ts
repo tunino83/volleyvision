@@ -4,6 +4,17 @@ import { PrismaService } from "../common/prisma.service";
 import { AuditService } from "../common/audit.service";
 import type { PersonInput } from "@vv/schema";
 
+/**
+ * Le scelte sull'avatar, dal testo all'oggetto.
+ *
+ * Un JSON illeggibile non deve impedire di vedere la persona: si torna
+ * all'avatar generato dal seme, che c'e sempre.
+ */
+function leggiOpzioni(json: string | null): Record<string, string[]> | null {
+  if (!json) return null;
+  try { return JSON.parse(json); } catch { return null; }
+}
+
 @Injectable()
 export class PersonsService {
   constructor(private prisma: PrismaService, private audit: AuditService) {}
@@ -117,11 +128,22 @@ export class PersonsService {
    * giusto.
    */
   async impostaAvatar(userId: string, id: string,
-                      d: { avatarStile: string | null; avatarSeme: string | null }) {
+                      d: { avatarStile: string | null; avatarSeme: string | null;
+                           avatarOpzioni?: Record<string, string[]> | null }) {
     await this.mia(userId, id);
     const p = await this.prisma.person.update({
-      where: { id }, data: { avatarStile: d.avatarStile, avatarSeme: d.avatarSeme } });
-    return { id: p.id, avatarStile: p.avatarStile, avatarSeme: p.avatarSeme };
+      where: { id },
+      data: {
+        avatarStile: d.avatarStile, avatarSeme: d.avatarSeme,
+        // `undefined` lascia com'e, `null` cancella: cosi chi manda solo
+        // stile e seme non perde le scelte fatte a mano.
+        ...(d.avatarOpzioni === undefined ? {} : {
+          avatarOpzioniJson: d.avatarOpzioni ? JSON.stringify(d.avatarOpzioni) : null,
+        }),
+      },
+    });
+    return { id: p.id, avatarStile: p.avatarStile, avatarSeme: p.avatarSeme,
+             avatarOpzioni: leggiOpzioni(p.avatarOpzioniJson) };
   }
 
   /**

@@ -93,10 +93,30 @@ export const AVATAR_STILI = [
 export const AvatarStile = z.enum(AVATAR_STILI);
 export type AvatarStile = z.infer<typeof AvatarStile>;
 
-/** L'avatar di una persona: stile e seme. Nessun file, nessun caricamento. */
+/**
+ * Le scelte fatte a mano sull'avatar.
+ *
+ * Ogni voce e un elenco di valori ammessi per quella caratteristica: la
+ * libreria ne pesca uno col seme, quindi un elenco di **un** elemento la
+ * fissa. E la stessa forma che si passa alla libreria, senza conversioni.
+ *
+ * Non si elencano qui i nomi delle caratteristiche: cambiano da stile a
+ * stile — `personas` ha naso e barba, `adventurer` occhiali e sopracciglia —
+ * e tenerne una copia significherebbe vederla invecchiare a ogni
+ * aggiornamento della libreria. Si convalida la **forma**; che i valori
+ * esistano lo sa la libreria, e un valore ignoto viene ignorato invece di
+ * rompere il disegno.
+ */
+export const AvatarOpzioni = z.record(
+  z.string().max(40),
+  z.array(z.string().max(40)).max(30),
+).refine((o) => Object.keys(o).length <= 20, "Troppe caratteristiche");
+export type AvatarOpzioni = z.infer<typeof AvatarOpzioni>;
+
 export const AvatarInput = z.object({
   avatarStile: AvatarStile.nullable(),
   avatarSeme: z.string().trim().min(1).max(64).nullable(),
+  avatarOpzioni: AvatarOpzioni.nullable().optional(),
 });
 export type AvatarInput = z.infer<typeof AvatarInput>;
 
