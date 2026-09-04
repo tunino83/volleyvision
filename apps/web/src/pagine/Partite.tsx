@@ -2,7 +2,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Pagine, Pillola, Squadre as Duo, Stato, data, gb } from "../componenti/Ui";
-import { Calendario, Pallone, Video } from "../componenti/Icone";
+import { Calendario, Condivisa, Pallone, Video } from "../componenti/Icone";
 
 interface Pagina { elementi: any[]; totale: number; pagina: number; perPagina: number; pagines?: number; pagine: number }
 
@@ -94,6 +94,19 @@ function Riga({ m, onApri }: { m: any; onApri: () => void }) {
 
       <div className="partita-coda">
         <span className="piccolo muto">{m.competition.nome}</span>
+
+        {/* Le condivisioni sono in sola lettura: chi la vede deve saperlo
+            guardando l'elenco, non scoprirlo quando prova a modificarla e
+            si sente rispondere di no. */}
+        {m.proprietario === false && (
+          <span className="pillola condivisa"
+                title={m.condivisaDa
+                  ? `Condivisa da ${m.condivisaDa} · puoi consultarla, non modificarla`
+                  : "Condivisa con te · puoi consultarla, non modificarla"}>
+            <Condivisa d={11} />
+            {m.condivisaDa ? `di ${m.condivisaDa}` : "condivisa"}
+          </span>
+        )}
         <span className="riga" style={{ gap: 6 }} title="Stato dei due video">
           <Video d={14} className="muto" />
           {m.video.map((v: any) => (

@@ -1090,3 +1090,12 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
   .banco-fianco { position: static; max-height: none; }
   .banco-azioni { max-height: 60vh; }
 }
+
+/* Partita condivisa: la si riconosce senza leggere, ma senza urlare —
+   e un'informazione di contesto, non un avviso. */
+.pillola.condivisa {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--testo-muto); border-color: var(--bordo);
+  background: transparent; font-weight: 500;
+}
+.pillola.condivisa svg { flex: none; }

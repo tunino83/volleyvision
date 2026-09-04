@@ -54,6 +54,23 @@ export function Nuvola({ d = 20, className, style }: P) {
   );
 }
 
+/**
+ * Condivisione: due persone, una davanti e una dietro.
+ *
+ * Non le due frecce che si rincorrono — quelle dicono "sincronizza", che qui
+ * sarebbe falso: le condivisioni sono in sola lettura e nulla torna indietro.
+ */
+export function Condivisa({ d = 20, className, style }: P) {
+  return (
+    <svg {...base(d, style)} className={className}>
+      <circle cx="9" cy="8" r="3.2" />
+      <path d="M3.5 19.5v-1.2a4.3 4.3 0 0 1 4.3-4.3h2.4a4.3 4.3 0 0 1 4.3 4.3v1.2" />
+      <path d="M16.2 5.2a3.2 3.2 0 0 1 0 5.6" />
+      <path d="M18.4 14.2a4.3 4.3 0 0 1 2.6 4v1.3" />
+    </svg>
+  );
+}
+
 /** Rete: due pali e la maglia. Serve dove si parla di campo e formazioni. */
 export function Rete({ d = 20, className, style }: P) {
   return (

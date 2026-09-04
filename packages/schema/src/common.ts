@@ -110,25 +110,45 @@ export interface CapacitaPartita {
   motivoBlocco: string | null;
 }
 
-export function capacitaPartita(stato: MatchStatus): CapacitaPartita {
+/**
+ * Cosa si puo fare su una partita.
+ *
+ * Due vincoli distinti, sovrapposti: lo **stato** (cio che e stato mandato
+ * all'analisi non si tocca piu) e la **proprieta** (le condivisioni sono in
+ * sola lettura). Stanno insieme qui perche l'interfaccia deve fare una
+ * domanda sola: chi li tenesse separati finirebbe per controllarne uno e
+ * dimenticare l'altro in qualche schermata.
+ *
+ * `proprietario` non passato significa "non lo so": si assume di si, che e
+ * il comportamento di prima e non rompe chi non lo fornisce ancora.
+ */
+export function capacitaPartita(stato: MatchStatus,
+                                proprietario: boolean = true): CapacitaPartita {
   const inLavorazione = stato === "PENDING" || stato === "RUNNING" || stato === "READY_FOR_PP";
   const conclusa = stato === "READY";
 
   // Aperta: prima dell'invio, o dopo un errore (che si corregge e si riprova).
   const aperta = stato === "WAITING" || stato === "ERROR";
 
+  // Su una partita altrui si guarda e basta: `AccessService` rifiuta ogni
+  // scrittura prima ancora di controllare le condivisioni.
+  const p = proprietario;
+
   return {
-    modificaDatiPartita: !inLavorazione,
-    modificaRoster: aperta,
-    modificaFormazioni: aperta,
-    modificaNumeroSet: aperta,
-    // I cambi si registrano sempre: non sono un dato di ingresso.
-    registraCambi: true,
-    caricaVideo: aperta,
+    modificaDatiPartita: p && !inLavorazione,
+    modificaRoster: p && aperta,
+    modificaFormazioni: p && aperta,
+    modificaNumeroSet: p && aperta,
+    // I cambi si registrano sempre: non sono un dato di ingresso. Ma su una
+    // partita altrui nemmeno quelli.
+    registraCambi: p,
+    caricaVideo: p && aperta,
+    // Le statistiche sono lettura: si vedono anche se la partita non e tua.
     vediStatistiche: conclusa,
-    eliminaPartita: !inLavorazione,
+    eliminaPartita: p && !inLavorazione,
     motivoBlocco:
-      inLavorazione ? "L'analisi e in corso su questi dati: non si modificano finche non finisce."
+      !p ? "Questa partita e condivisa con te: puoi consultarla, non modificarla."
+      : inLavorazione ? "L'analisi e in corso su questi dati: non si modificano finche non finisce."
       : conclusa ? "L'analisi e stata fatta su questi dati: modificarli renderebbe i risultati non spiegabili."
       : null,
   };

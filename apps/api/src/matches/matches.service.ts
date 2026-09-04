@@ -42,20 +42,38 @@ export class MatchesService {
       this.prisma.match.count({ where }),
       this.prisma.match.findMany({
         where,
-        include: { competition: true, homeTeam: true, awayTeam: true, video: true },
+        // `owner` col solo nome: serve a dire "condivisa da Marcello", non
+        // a portarsi dietro un utente intero per ogni riga.
+        include: { competition: { include: { owner: { select: { nome: true, cognome: true } } } },
+                   homeTeam: true, awayTeam: true, video: true },
         orderBy: { data: "desc" },
         skip: (pagina - 1) * perPagina,
         take: perPagina,
       }),
     ]);
 
-    return { elementi: m.map((x) => this.dto(x)), totale, pagina, perPagina,
+    return { elementi: m.map((x) => this.dto(x, userId)), totale, pagina, perPagina,
              pagine: Math.max(1, Math.ceil(totale / perPagina)) };
   }
 
-  private dto(x: any) {
+  /**
+   * `userId` serve solo a dire **di chi e** la partita.
+   *
+   * Le condivisioni sono in sola lettura (vedi `AccessService`), ma finora
+   * il client non sapeva distinguere le proprie dalle altrui: scopriva il
+   * limite provando a modificare e ricevendo un rifiuto. Dirlo prima e la
+   * differenza fra un'interfaccia che guida e una che sorprende.
+   */
+  private dto(x: any, userId?: string) {
+    const proprietario = userId
+      ? x.competition?.ownerId === userId || x.createdById === userId
+      : undefined;
     return {
       id: x.id, data: x.data.toISOString(), stato: x.stato,
+      proprietario,
+      /** Chi l'ha condivisa: si mostra accanto all'etichetta. */
+      condivisaDa: proprietario === false
+        ? x.competition?.owner?.nome ?? null : null,
       statoAggregato: aggregateStatus(x.stato),
       erroreMessaggio: x.erroreMessaggio,
       competition: { id: x.competition.id, nome: x.competition.nome, stagione: x.competition.stagione },
@@ -87,13 +105,15 @@ export class MatchesService {
       },
       include: { competition: true, homeTeam: true, awayTeam: true, video: true },
     });
-    return this.dto(m);
+    return this.dto(m, userId);
   }
 
   async dettaglio(userId: string, id: string) {
     await this.access.match(userId, id);
     const m = await this.prisma.match.findUniqueOrThrow({
-      where: { id }, include: { competition: true, homeTeam: true, awayTeam: true, video: true } });
+      where: { id },
+      include: { competition: { include: { owner: { select: { nome: true, cognome: true } } } },
+                 homeTeam: true, awayTeam: true, video: true } });
     const [giocatori, formazioni, sostituzioni, analisi] = await Promise.all([
       this.prisma.matchPlayer.findMany({ where: { matchId: id }, orderBy: [{ lato: "asc" }, { numeroMaglia: "asc" }] }),
       this.prisma.lineup.findMany({ where: { matchId: id }, orderBy: [{ set: "asc" }, { lato: "asc" }] }),
@@ -120,9 +140,13 @@ export class MatchesService {
       } catch { /* pacchetto illeggibile: resta il dichiarato */ }
     }
 
-    return { ...this.dto(m), giocatori, formazioni, sostituzioni,
+    // La proprieta entra nelle capacita: cosi l'interfaccia fa una domanda
+    // sola e non deve ricordarsi di controllare due cose diverse.
+    const proprio = m.competition.ownerId === userId || m.createdById === userId;
+
+    return { ...this.dto(m, userId), giocatori, formazioni, sostituzioni,
              numeroSet, setDaAnalisi,
-             capacita: capacitaPartita(m.stato as MatchStatus),
+             capacita: capacitaPartita(m.stato as MatchStatus, proprio),
              completezza: this.completezza(giocatori, formazioni, numeroSet) };
   }
 
