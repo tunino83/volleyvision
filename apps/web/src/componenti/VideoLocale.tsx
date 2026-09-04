@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { OverlayCampo } from "./OverlayCampo";
 import { StatisticheVideo } from "./StatisticheVideo";
+import { VideoEsteso, Pannello, useTempoConservato } from "./VideoEsteso";
+import { RosterVideo } from "./RosterVideo";
 import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Stato } from "./Ui";
@@ -51,6 +53,8 @@ export default function VideoLocale({ partita }: { partita: any }) {
    * mezza schermata a ogni immagine.
    */
   const [frameCorrente, setFrameCorrente] = useState(0);
+  /** La vista estesa: video grande, pannelli a sinistra, azioni a destra. */
+  const [esteso, setEsteso] = useState(false);
   /*
    * Due viste distinte, e la predefinita e il campo.
    *
@@ -64,6 +68,10 @@ export default function VideoLocale({ partita }: { partita: any }) {
   const [lato, setLato] = useState<1 | 2>(1);
   const video = useRef<HTMLVideoElement>(null);
   const scelta = useRef<HTMLInputElement>(null);
+
+  // L'elemento video viene ricreato passando da una vista all'altra: senza
+  // questo si ripartirebbe da capo proprio quando si vuole ingrandire.
+  const annotaTempo = useTempoConservato(video, esteso);
 
   // Il pacchetto porta gli fps: senza, il fotogramma non si converte in tempo.
   const pkg = useQuery({
@@ -180,100 +188,220 @@ export default function VideoLocale({ partita }: { partita: any }) {
          * si vedono insieme — ed e per questo che tutti i banchi di analisi
          * video sono fatti cosi.
          */
-        <div className="banco">
-          <div className="banco-video">
-            <Carta>
-              {/* La tela sta sopra il video, dentro lo stesso riquadro: e
-                  quel riquadro a dare le coordinate ai segni. */}
-              <div className="lettore-riquadro">
+        <>
+          {/* Vista normale: video e colonna di fianco dentro la pagina. */}
+          {!esteso && (
+            <div className="banco">
+              <div className="banco-video">
+                <Carta>
+                {/* La tela sta sopra il video, dentro lo stesso riquadro: e
+                quel riquadro a dare le coordinate ai segni. */}
+                <div className="lettore-riquadro">
                 <video ref={video} src={url} controls preload="auto" className="lettore"
-                       onTimeUpdate={(e) => fps && setFrameCorrente(
-                         Math.round(e.currentTarget.currentTime * fps))} />
+                onTimeUpdate={(e) => fps && setFrameCorrente(
+                Math.round(e.currentTarget.currentTime * fps))} />
                 {fps && posizioni && (
-                  <OverlayCampo matchId={partita.id} video={video} fps={fps}
-                                omografia={omografia} lato={lato}
-                                segniSulVideo={segni && !!omografia} campo2d={campo2d}
-                                nomeCasa={partita.home?.nome} nomeOspiti={partita.away?.nome} />
+                <OverlayCampo matchId={partita.id} video={video} fps={fps}
+                omografia={omografia} lato={lato}
+                segniSulVideo={segni && !!omografia} campo2d={campo2d}
+                nomeCasa={partita.home?.nome} nomeOspiti={partita.away?.nome} />
                 )}
-              </div>
+                </div>
 
-              <div className="riga" style={{ marginTop: "var(--sp3)" }}>
+                <div className="riga" style={{ marginTop: "var(--sp3)" }}>
                 <button className="piccolo" onClick={() => passo(-1)}>‹ 1 fot.</button>
                 <button className="piccolo" onClick={() => passo(1)}>1 fot. ›</button>
                 <button className="piccolo" onClick={() => passo(-(fps ?? 30) * 5)}>‹ 5 s</button>
                 <button className="piccolo" onClick={() => passo((fps ?? 30) * 5)}>5 s ›</button>
                 <span className="spazio" />
                 {posizioni && (
-                  <>
-                    <button className={`piccolo ${campo2d ? "attivo" : ""}`}
-                            onClick={() => setCampo2d((v) => !v)}
-                            title="Il campo visto dall'alto, in un riquadro">
-                      Campo 2D
-                    </button>
-                    {omografia && (
-                      <>
-                        <button className={`piccolo ${segni ? "attivo" : ""}`}
-                                onClick={() => setSegni((v) => !v)}
-                                title="Cerchi sotto i giocatori, sopra l'immagine">
-                          Segni sul video
-                        </button>
-                        {/* Le due riprese hanno matrici diverse: indicare
-                            quella sbagliata sposta tutti i segni. Non e
-                            indovinabile dal file, quindi lo dice l'utente. */}
-                        {segni && (
-                          <button className="piccolo"
-                                  onClick={() => setLato((l) => (l === 1 ? 2 : 1))}
-                                  title="Da quale telecamera e ripreso questo file">
-                            Telecamera {lato}
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </>
+                <>
+                <button className={`piccolo ${campo2d ? "attivo" : ""}`}
+                onClick={() => setCampo2d((v) => !v)}
+                title="Il campo visto dall'alto, in un riquadro">
+                Campo 2D
+                </button>
+                {omografia && (
+                <>
+                <button className={`piccolo ${segni ? "attivo" : ""}`}
+                onClick={() => setSegni((v) => !v)}
+                title="Cerchi sotto i giocatori, sopra l'immagine">
+                Segni sul video
+                </button>
+                {/* Le due riprese hanno matrici diverse: indicare
+                quella sbagliata sposta tutti i segni. Non e
+                indovinabile dal file, quindi lo dice l'utente. */}
+                {segni && (
+                <button className="piccolo"
+                onClick={() => setLato((l) => (l === 1 ? 2 : 1))}
+                title="Da quale telecamera e ripreso questo file">
+                Telecamera {lato}
+                </button>
+                )}
+                </>
+                )}
+                </>
+                )}
+                {/* Solo nella vista normale: dentro quella estesa il comando per
+                    uscire c'e gia, e questo non farebbe nulla. */}
+                {!esteso && (
+                  <button className="piccolo" onClick={() => { annotaTempo(); setEsteso(true); }}
+                  title="Video grande, con statistiche e roster di fianco">
+                  Vista estesa
+                  </button>
                 )}
                 <button className="piccolo" onClick={() => { setFile(null); setUrl(null); }}>
-                  Cambia file
+                Cambia file
                 </button>
+                </div>
+
+                {posizioni && segni && (
+                <p className="piccolo muto" style={{ marginTop: 4, marginBottom: 0 }}>
+                I segni sul video passano per la prospettiva: se sono sfasati
+                tutti insieme, prova l'altra telecamera. Il campo 2D non ne
+                risente — le posizioni le disegna cosi come sono.
+                </p>
+                )}
+
+                {/* Lo scarto dichiarato: e il numero che dira se il salto al
+                fotogramma regge sui file veri del fornitore. */}
+                {presentato && (
+                <p className="piccolo muto" style={{ marginBottom: 0 }}>
+                Chiesto il fotogramma <span className="numerico">{presentato.chiesto}</span>,
+                presentato il <span className="numerico">{presentato.ottenuto}</span>
+                {presentato.chiesto === presentato.ottenuto
+                ? " — esatto."
+                : ` — scarto di ${Math.abs(presentato.ottenuto - presentato.chiesto)} fotogrammi.`}
+                </p>
+                )}
+                {!fps && (
+                <p className="piccolo" style={{ color: "var(--attenzione)", marginBottom: 0 }}>
+                Gli fps non sono noti: senza, il fotogramma non si converte in tempo.
+                </p>
+                )}
+                </Carta>
+              </div>
+              <aside className="banco-fianco">
+                  {/* Le statistiche prima delle azioni: e il contesto in cui si
+                  legge cio che sta sotto, non un'appendice. */}
+                  {fps && pkg.data && (
+                  <StatisticheVideo pacchetto={pkg.data} frame={frameCorrente}
+                  nomi={{ h: partita.home?.nome ?? "Casa",
+                  a: partita.away?.nome ?? "Ospiti" }} />
+                  )}
+                  <Azioni partita={partita} onVai={vaiAlFotogramma} />
+              </aside>
+            </div>
+          )}
+
+          {/* Vista estesa: le stesse parti, su tutto lo schermo. */}
+          <VideoEsteso aperto={esteso} onChiudi={() => { annotaTempo(); setEsteso(false); }}
+            sinistra={<>
+              <Pannello titolo="Statistiche" chiave="vv.esteso.statistiche">
+                {fps && pkg.data && (
+                  <StatisticheVideo pacchetto={pkg.data} frame={frameCorrente}
+                                    nomi={{ h: partita.home?.nome ?? "Casa",
+                                            a: partita.away?.nome ?? "Ospiti" }} />
+                )}
+              </Pannello>
+              <Pannello titolo="Roster" chiave="vv.esteso.roster" apertoDiSuo={false}>
+                <RosterVideo giocatori={partita.giocatori}
+                             nomi={{ h: partita.home?.nome ?? "Casa",
+                                     a: partita.away?.nome ?? "Ospiti" }} />
+              </Pannello>
+            </>}
+            centro={esteso ? (
+              <Carta>
+              {/* La tela sta sopra il video, dentro lo stesso riquadro: e
+              quel riquadro a dare le coordinate ai segni. */}
+              <div className="lettore-riquadro">
+              <video ref={video} src={url} controls preload="auto" className="lettore"
+              onTimeUpdate={(e) => fps && setFrameCorrente(
+              Math.round(e.currentTarget.currentTime * fps))} />
+              {fps && posizioni && (
+              <OverlayCampo matchId={partita.id} video={video} fps={fps}
+              omografia={omografia} lato={lato}
+              segniSulVideo={segni && !!omografia} campo2d={campo2d}
+              nomeCasa={partita.home?.nome} nomeOspiti={partita.away?.nome} />
+              )}
+              </div>
+
+              <div className="riga" style={{ marginTop: "var(--sp3)" }}>
+              <button className="piccolo" onClick={() => passo(-1)}>‹ 1 fot.</button>
+              <button className="piccolo" onClick={() => passo(1)}>1 fot. ›</button>
+              <button className="piccolo" onClick={() => passo(-(fps ?? 30) * 5)}>‹ 5 s</button>
+              <button className="piccolo" onClick={() => passo((fps ?? 30) * 5)}>5 s ›</button>
+              <span className="spazio" />
+              {posizioni && (
+              <>
+              <button className={`piccolo ${campo2d ? "attivo" : ""}`}
+              onClick={() => setCampo2d((v) => !v)}
+              title="Il campo visto dall'alto, in un riquadro">
+              Campo 2D
+              </button>
+              {omografia && (
+              <>
+              <button className={`piccolo ${segni ? "attivo" : ""}`}
+              onClick={() => setSegni((v) => !v)}
+              title="Cerchi sotto i giocatori, sopra l'immagine">
+              Segni sul video
+              </button>
+              {/* Le due riprese hanno matrici diverse: indicare
+              quella sbagliata sposta tutti i segni. Non e
+              indovinabile dal file, quindi lo dice l'utente. */}
+              {segni && (
+              <button className="piccolo"
+              onClick={() => setLato((l) => (l === 1 ? 2 : 1))}
+              title="Da quale telecamera e ripreso questo file">
+              Telecamera {lato}
+              </button>
+              )}
+              </>
+              )}
+              </>
+              )}
+              {/* Solo nella vista normale: dentro quella estesa il comando per
+                  uscire c'e gia, e questo non farebbe nulla. */}
+              {!esteso && (
+                <button className="piccolo" onClick={() => { annotaTempo(); setEsteso(true); }}
+                title="Video grande, con statistiche e roster di fianco">
+                Vista estesa
+                </button>
+              )}
+              <button className="piccolo" onClick={() => { setFile(null); setUrl(null); }}>
+              Cambia file
+              </button>
               </div>
 
               {posizioni && segni && (
-                <p className="piccolo muto" style={{ marginTop: 4, marginBottom: 0 }}>
-                  I segni sul video passano per la prospettiva: se sono sfasati
-                  tutti insieme, prova l'altra telecamera. Il campo 2D non ne
-                  risente — le posizioni le disegna cosi come sono.
-                </p>
+              <p className="piccolo muto" style={{ marginTop: 4, marginBottom: 0 }}>
+              I segni sul video passano per la prospettiva: se sono sfasati
+              tutti insieme, prova l'altra telecamera. Il campo 2D non ne
+              risente — le posizioni le disegna cosi come sono.
+              </p>
               )}
 
               {/* Lo scarto dichiarato: e il numero che dira se il salto al
-                  fotogramma regge sui file veri del fornitore. */}
+              fotogramma regge sui file veri del fornitore. */}
               {presentato && (
-                <p className="piccolo muto" style={{ marginBottom: 0 }}>
-                  Chiesto il fotogramma <span className="numerico">{presentato.chiesto}</span>,
-                  presentato il <span className="numerico">{presentato.ottenuto}</span>
-                  {presentato.chiesto === presentato.ottenuto
-                    ? " — esatto."
-                    : ` — scarto di ${Math.abs(presentato.ottenuto - presentato.chiesto)} fotogrammi.`}
-                </p>
+              <p className="piccolo muto" style={{ marginBottom: 0 }}>
+              Chiesto il fotogramma <span className="numerico">{presentato.chiesto}</span>,
+              presentato il <span className="numerico">{presentato.ottenuto}</span>
+              {presentato.chiesto === presentato.ottenuto
+              ? " — esatto."
+              : ` — scarto di ${Math.abs(presentato.ottenuto - presentato.chiesto)} fotogrammi.`}
+              </p>
               )}
               {!fps && (
-                <p className="piccolo" style={{ color: "var(--attenzione)", marginBottom: 0 }}>
-                  Gli fps non sono noti: senza, il fotogramma non si converte in tempo.
-                </p>
+              <p className="piccolo" style={{ color: "var(--attenzione)", marginBottom: 0 }}>
+              Gli fps non sono noti: senza, il fotogramma non si converte in tempo.
+              </p>
               )}
-            </Carta>
-          </div>
-
-          <aside className="banco-fianco">
-            {/* Le statistiche prima delle azioni: e il contesto in cui si
-                legge cio che sta sotto, non un'appendice. */}
-            {fps && pkg.data && (
-              <StatisticheVideo pacchetto={pkg.data} frame={frameCorrente}
-                                nomi={{ h: partita.home?.nome ?? "Casa",
-                                        a: partita.away?.nome ?? "Ospiti" }} />
-            )}
-            <Azioni partita={partita} onVai={vaiAlFotogramma} />
-          </aside>
-        </div>
+              </Carta>
+            ) : null}
+            destra={esteso ? <Azioni partita={partita} onVai={vaiAlFotogramma} /> : null}
+          />
+        </>
       )}
     </>
   );

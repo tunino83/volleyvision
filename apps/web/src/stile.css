@@ -1123,3 +1123,89 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 
 /* Chiuso il tabellone perde il bordo inferiore: non separa piu da niente. */
 .stat-video.chiuso .stat-video-tabellone { padding-bottom: 0; border-bottom: 0; }
+
+/* ============================================================
+   VISTA ESTESA — video grande, pannelli e azioni intorno
+   ============================================================ */
+
+.esteso {
+  position: fixed; inset: 0; z-index: 80;
+  background: var(--sfondo);
+  display: grid; grid-template-columns: 260px minmax(0, 1fr) 320px;
+  gap: var(--sp3); padding: var(--sp3);
+}
+
+/* Le colonne laterali scorrono da sole: il video al centro resta fermo,
+   che e il motivo per cui si e aperta questa vista. */
+.esteso-sinistra, .esteso-destra {
+  display: flex; flex-direction: column; gap: var(--sp3);
+  min-height: 0; overflow-y: auto;
+}
+.esteso-centro {
+  display: flex; flex-direction: column; gap: var(--sp3);
+  min-width: 0; min-height: 0; overflow-y: auto;
+}
+.esteso-chiudi { align-self: flex-end; }
+
+/* Il video si prende l'altezza disponibile senza sfondare: e una vista a
+   schermo intero, non una pagina che scorre. */
+.esteso-centro .lettore { max-height: calc(100vh - 190px); object-fit: contain; }
+.esteso-destra .banco-azioni { max-height: none; flex: 1; }
+.esteso-destra .banco-fianco { position: static; max-height: none; }
+
+/* Un pannello richiudibile: la testa e il comando, non un titolo decorativo. */
+.pannello {
+  background: var(--carta); border: 1px solid var(--bordo);
+  border-radius: var(--r); box-shadow: var(--ombra); flex: none;
+}
+.pannello-testa {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: var(--sp3); background: transparent; border: 0;
+  color: var(--testo-muto); cursor: pointer; text-align: left;
+}
+.pannello-testa:hover { color: var(--palla); }
+.pannello-testa .freccia {
+  width: 0; height: 0; flex: none;
+  border-left: 4px solid transparent; border-right: 4px solid transparent;
+}
+.pannello-testa .freccia.su { border-bottom: 5px solid currentColor; }
+.pannello-testa .freccia.giu { border-top: 5px solid currentColor; }
+.pannello-corpo { padding: 0 var(--sp3) var(--sp3); }
+/* Dentro un pannello le statistiche non ripetono il proprio riquadro. */
+.pannello-corpo .stat-video {
+  background: transparent; border: 0; box-shadow: none; padding: 0;
+}
+.pannello-corpo .stat-video-interruttore { display: none; }
+
+/* Il roster: numero di maglia grande, cognome leggibile, ruolo di servizio. */
+.roster-video-squadra + .roster-video-squadra { margin-top: var(--sp3); }
+.roster-video-squadra .etichetta { display: block; margin-bottom: 6px; }
+.roster-video-riga {
+  display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: 8px; padding: 3px 0;
+  font-size: 12px;
+}
+.roster-video-riga.libero { color: var(--palla); }
+.roster-video-numero { position: relative; display: inline-flex; color: var(--bordo); }
+.roster-video-riga.libero .roster-video-numero { color: var(--palla); }
+.roster-video-numero em {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-style: normal; font-size: 9px; font-weight: 700; color: var(--testo);
+}
+.roster-video-nome { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
+.roster-video-nome em {
+  font-style: normal; font-size: 10.5px; color: var(--testo-muto);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* Sotto i 1100 px tre colonne non ci stanno: i pannelli passano sopra il
+   video e le azioni sotto, invece di stringersi fino a diventare illeggibili. */
+@media (max-width: 1100px) {
+  .esteso {
+    grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow-y: auto;
+  }
+  .esteso-sinistra { flex-direction: row; flex-wrap: wrap; }
+  .esteso-sinistra .pannello { flex: 1 1 240px; }
+  .esteso-centro .lettore { max-height: 55vh; }
+}
