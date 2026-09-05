@@ -4,8 +4,8 @@ import type { Response } from "express";
 import { TeamsService } from "./teams.service";
 import { AuthGuard, CurrentUser, type JwtUser } from "../auth/auth.guard";
 import { ZodPipe } from "../common/zod.pipe";
-import { FotoSquadraInput, LogoSquadraInput, ModificaGiocatoreSquadraInput, ShareInput,
-         TeamInput, TeamPlayerInput, TeamRosterInput } from "@vv/schema";
+import { FotoSquadraInput, LogoSquadraInput, ModificaGiocatoreSquadraInput, PreferitoInput,
+         ShareInput, TeamInput, TeamPlayerInput, TeamRosterInput } from "@vv/schema";
 
 @Controller("teams") @UseGuards(AuthGuard)
 export class TeamsController {
@@ -39,6 +39,16 @@ export class TeamsController {
   }
 
   @Delete(":id") del(@CurrentUser() u: JwtUser, @Param("id") id: string) { return this.svc.elimina(u.sub, id); }
+
+  /**
+   * Fra le preferite, o non piu. Basta vedere la squadra: la scelta e di chi
+   * guarda, non del proprietario.
+   */
+  @Put(":id/preferita")
+  preferisci(@CurrentUser() u: JwtUser, @Param("id") id: string,
+             @Body(new ZodPipe(PreferitoInput)) d: PreferitoInput) {
+    return this.svc.preferisci(u.sub, id, d.preferita);
+  }
 
   /*
    * Lo stemma. Due modi, e non si escludono: disegnato dalle iniziali, o

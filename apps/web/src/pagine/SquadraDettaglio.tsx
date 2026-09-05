@@ -7,6 +7,7 @@ import { Avatar, NOME_API, STILI, type Stile } from "../componenti/Avatar";
 import { preparaFoto, byteDiDataUri } from "../componenti/ritaglia";
 import { AvatarPersonalizza } from "../componenti/AvatarPersonalizza";
 import { Stemma } from "../componenti/LogoSquadra";
+import { Preferita } from "../componenti/Preferita";
 import StemmaPersonalizza from "../componenti/StemmaPersonalizza";
 import { useFunzioni } from "../funzioni";
 import { Maglia, MagliaPiena, Persona } from "../componenti/Icone";
@@ -85,11 +86,17 @@ export default function SquadraDettaglio() {
             </p>
           </div>
         </div>
-        {!soloLettura && (
-          <button className="primario" onClick={() => { setNuovo(true); setApre(null); }}>
-            <Maglia d={16} /> Aggiungi
-          </button>
-        )}
+        <div className="riga">
+          {q.data && (
+            <Preferita risorsa="teams" id={q.data.id} preferita={!!q.data.preferita}
+                       chiaviDaAggiornare={[["squadre"], ["squadra", q.data.id]]} />
+          )}
+          {!soloLettura && (
+            <button className="primario" onClick={() => { setNuovo(true); setApre(null); }}>
+              <Maglia d={16} /> Aggiungi
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Solo per chi la possiede: su una squadra condivisa in sola lettura,

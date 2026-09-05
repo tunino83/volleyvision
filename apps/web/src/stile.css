@@ -1357,13 +1357,6 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 .apri-android:hover { border-color: var(--bordo-forte); color: var(--inchiostro); }
 .apri-android:hover svg { color: var(--palla); }
 
-/* Le schede a griglia: dal telefono (una colonna) allo schermo largo (tre o
-   piu) con una regola sola. `auto-fill` e non un numero fisso di colonne —
-   una soglia per ogni formato invecchia al primo schermo nuovo. */
-.griglia-schede {
-  display: grid; gap: var(--sp3);
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-}
 
 /* Lo stemma della squadra. Quadrato con angoli appena smussati, perche gli
    avatar delle persone sono tondi: dove compaiono insieme, la forma dice
@@ -1384,3 +1377,34 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 }
 .stemma-anteprima .stemma { border-radius: 8px; }
 .separatore { border: 0; border-top: 1px solid var(--bordo); margin: var(--sp4) 0; }
+
+/* La stella delle preferite. Spenta e un contorno, accesa e piena e gialla:
+   il colore da solo non basterebbe a chi non lo distingue. */
+.stella {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; padding: 0; flex: none;
+  background: transparent; border: 0; border-radius: var(--r);
+  color: var(--muto); cursor: pointer;
+}
+.stella:hover { color: var(--palla); background: var(--carta-alt); }
+.stella-attiva { color: var(--palla); }
+.stella:disabled { opacity: .5; cursor: default; }
+
+/* Una persona preferita nella home: il collegamento avvolge avatar e nome,
+   quindi non deve sembrare testo di un collegamento. */
+.persona-preferita { color: inherit; text-decoration: none; min-width: 0; }
+.persona-preferita:hover .grassetto { color: var(--palla); }
+
+/* I numeri di una persona: una fila che va a capo, non una tabella. Sono
+   cinque valori corti, e una tabella per cinque numeri e impaginazione che
+   costa piu di quanto rende. */
+.numeri-persona {
+  display: flex; flex-wrap: wrap; gap: var(--sp4);
+  margin-top: var(--sp3); padding-top: var(--sp3);
+  border-top: 1px solid var(--bordo);
+}
+.numero-persona { display: grid; gap: 1px; }
+.numero-persona .valore {
+  font-family: var(--f-display); font-size: 21px; font-weight: 700;
+  line-height: 1; color: var(--testo);
+}

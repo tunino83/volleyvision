@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Stemma } from "../componenti/LogoSquadra";
+import { Preferita } from "../componenti/Preferita";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
@@ -53,12 +54,18 @@ export default function Squadre() {
           <div className="griglia">
             {q.data?.map((t) => (
               <Carta key={t.id} onClick={() => nav(`/squadre/${t.id}`)}>
-                <div className="riga">
-                  <Stemma squadra={t} d={34} />
-                  <div>
-                    <div className="grassetto">{t.nome}</div>
-                    <div className="piccolo muto">{t.stagione}</div>
+                <div className="riga-sp">
+                  <div className="riga">
+                    <Stemma squadra={t} d={34} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="grassetto">{t.nome}</div>
+                      <div className="piccolo muto">{t.stagione}</div>
+                    </div>
                   </div>
+                  {/* Anche sulle condivise: preferire e di chi guarda, non
+                      del proprietario. */}
+                  <Preferita risorsa="teams" id={t.id} preferita={!!t.preferita}
+                             chiaviDaAggiornare={[["squadre"], ["squadra", t.id]]} />
                 </div>
                 <div className="piccolo muto" style={{ marginTop: 6 }}>
                   {t.giocatori} giocatori · {t.partite} partite

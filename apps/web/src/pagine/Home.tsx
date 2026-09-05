@@ -4,31 +4,39 @@ import { API } from "../api/client";
 import { Carta, Pillola, Squadre as Duo, Stato, data } from "../componenti/Ui";
 import { Righe } from "../componenti/Grafici";
 import { Stemma } from "../componenti/LogoSquadra";
+import { Avatar } from "../componenti/Avatar";
 
 /**
  * La prima schermata: cosa e successo e cosa c'e da fare.
  *
  * Non un indice di collegamenti — quelli stanno gia nella navigazione — ma
- * **i numeri della propria stagione**, le ultime partite e le squadre.
+ * **i numeri della propria stagione**, le ultime partite, e le squadre e le
+ * persone che si e scelto di tenere d'occhio.
  *
- * Le statistiche vengono dalle partite gia analizzate, e l'insieme si
- * dichiara sempre: un numero senza sapere su quante partite e calcolato non
- * significa niente (regola del progetto, `docs/14`).
+ * Le preferite, e non tutto: con dieci squadre e centinaia di persone una
+ * home che le elenca tutte non e una sintesi, e un secondo elenco. Chi
+ * guarda decide cosa gli interessa; finche non ha deciso, la schermata lo
+ * chiede invece di indovinare.
  */
 export default function Home() {
   const nav = useNavigate();
 
   const partite = useQuery({
     queryKey: ["partite", "home"],
-    queryFn: () => API.get<any>("/matches?perPagina=5"),
+    queryFn: () => API.get<any>("/matches?perPagina=4"),
   });
   const squadre = useQuery({ queryKey: ["squadre"], queryFn: () => API.get<any[]>("/teams") });
   const stagione = useQuery({
     queryKey: ["stats", "stagione", "home"],
     queryFn: () => API.get<any>("/stats/players"),
   });
+  const persone = useQuery({
+    queryKey: ["persone", "preferite"],
+    queryFn: () => API.get<any[]>("/persons/preferite"),
+  });
 
   const primoAccesso = !squadre.isLoading && (squadre.data?.length ?? 0) === 0;
+  const preferite = (squadre.data ?? []).filter((t) => t.preferita);
 
   return (
     <>
@@ -58,24 +66,19 @@ export default function Home() {
              vuoto={partite.data?.elementi.length === 0} messaggioVuoto="Nessuna partita."
              azione={<button className="primario" onClick={() => nav("/partite/nuova")}>Crea la prima</button>}>
         {/*
-          * A griglia, non in colonna.
+          * Due per riga, non tre.
           *
-          * Una scheda partita e alta due righe: su uno schermo largo,
-          * distesa per tutta la larghezza, e un nastro quasi vuoto con
-          * quattro parole in mezzo. Tre per riga occupano lo spazio che
-          * hanno invece di quello che c'e, e cinque partite si vedono
-          * insieme invece che una sotto l'altra.
-          *
-          * `auto-fill` con un minimo, e non un numero fisso di colonne:
-          * cosi la stessa regola vale dal telefono allo schermo largo senza
-          * una soglia per ogni formato.
+          * A tre colonne i nomi delle squadre andavano a capo su ogni scheda:
+          * "Sarno Volley Club" occupava due righe e la scheda diventava un
+          * francobollo. Lo spazio in piu non e ornamento — e la differenza
+          * fra leggere un nome e decifrarlo.
           */}
-        <div className="griglia-schede">
+        <div className="griglia-due">
           {partite.data?.elementi.map((m: any) => (
             <Carta key={m.id} onClick={() => nav(`/partite/${m.id}`)}>
               <div className="riga-sp">
                 <Duo casa={m.home.nome} ospite={m.away.nome}
-                   squadraCasa={m.home} squadraOspite={m.away} />
+                     squadraCasa={m.home} squadraOspite={m.away} />
                 <Pillola stato={m.stato} />
               </div>
               <div className="piccolo muto" style={{ marginTop: 4 }}>
@@ -86,37 +89,124 @@ export default function Home() {
         </div>
       </Stato>
 
+      {!primoAccesso && <SquadrePreferite squadre={squadre} preferite={preferite} />}
+      {!primoAccesso && <PersonePreferite persone={persone} stagione={stagione} />}
+    </>
+  );
+}
+
+/** Le squadre che si e scelto di tenere d'occhio. */
+function SquadrePreferite({ squadre, preferite }: { squadre: any; preferite: any[] }) {
+  const nav = useNavigate();
+
+  return (
+    <>
       <h2>Le tue squadre</h2>
-      <Stato caricamento={squadre.isLoading} errore={squadre.error}
-             vuoto={squadre.data?.length === 0} messaggioVuoto="Nessuna squadra."
-             azione={<Link className="bottone" to="/squadre">Crea una squadra</Link>}>
-        {/*
-          * Righe e non riquadri.
-          *
-          * Una squadra non ha niente da mostrare che giustifichi un riquadro:
-          * e un nome e due numeri. In griglia occupavano mezza schermata per
-          * dire poco, e su telefono diventavano una colonna da scorrere.
-          * In riga si leggono in fila, come un elenco — che e quello che sono.
-          */}
-        <Carta className="elenco-squadre">
-          {squadre.data?.map((t) => (
-            <button key={t.id} className="riga-squadra" onClick={() => nav(`/squadre/${t.id}`)}>
-              {/* Lo stemma al posto dell'icona generica: erano tutte uguali,
-                  e un elenco di icone identiche non aiuta a trovare niente. */}
-              <Stemma squadra={t} />
-              <span className="riga-squadra-nome">
-                {t.nome}
-                {!t.proprietario && <em className="piccolo muto"> · condivisa</em>}
-              </span>
-              <span className="piccolo muto">{t.stagione}</span>
-              <span className="piccolo muto numerico riga-squadra-numeri">
-                {t.giocatori} giocatori · {t.partite} partite
-              </span>
-            </button>
-          ))}
-        </Carta>
+      <Stato caricamento={squadre.isLoading} errore={squadre.error}>
+        {preferite.length === 0 ? (
+          <Carta>
+            <div className="piccolo muto">
+              {/* Non uno stato vuoto ma un'istruzione: le squadre ci sono, e
+                  quello che manca e una scelta che solo chi guarda puo fare. */}
+              Nessuna squadra fra le preferite. Aprine una da{" "}
+              <Link to="/squadre">Squadre</Link> e segnala con la stella: qui
+              compariranno quelle, invece di tutte.
+            </div>
+          </Carta>
+        ) : (
+          <div className="griglia-due">
+            {preferite.map((t) => (
+              <Carta key={t.id} onClick={() => nav(`/squadre/${t.id}`)}>
+                <div className="riga">
+                  <Stemma squadra={t} d={34} />
+                  <div style={{ minWidth: 0 }}>
+                    <div className="grassetto">{t.nome}</div>
+                    <div className="piccolo muto">
+                      {t.stagione} · {t.giocatori} giocatori · {t.partite} partite
+                      {!t.proprietario && " · condivisa"}
+                    </div>
+                  </div>
+                </div>
+              </Carta>
+            ))}
+          </div>
+        )}
       </Stato>
     </>
+  );
+}
+
+/**
+ * Le persone preferite, coi loro numeri di stagione.
+ *
+ * I numeri arrivano da `/stats/players`, la stessa risposta che alimenta la
+ * sintesi qui sopra: **non si ricalcolano**. Calcolarli una seconda volta in
+ * un altro punto significherebbe, prima o poi, che la home dice un numero e
+ * la scheda un altro — ed e il tipo di errore che nessuno segnala, perche
+ * nessuno guarda due schermate insieme.
+ */
+function PersonePreferite({ persone, stagione }: { persone: any; stagione: any }) {
+  const elenco: any[] = persone.data ?? [];
+  // Nessuna preferita: nessuna sezione. Un riquadro che dice "non hai scelto
+  // nessuno" e gia stato messo per le squadre, e ripeterlo trasformerebbe la
+  // home in un elenco di cose non fatte.
+  if (persone.isLoading || elenco.length === 0) return null;
+
+  const per = new Map<string, any>(
+    (stagione.data?.voci ?? []).map((v: any) => [v.personId, v]));
+
+  return (
+    <>
+      <h2>Le persone che segui</h2>
+      <div className="griglia-due">
+        {elenco.map((p) => {
+          const v = per.get(p.id);
+          return (
+            <Carta key={p.id}>
+              <Link to={`/persone/${p.id}`} className="riga persona-preferita">
+                <Avatar seme={p.avatarSeme || `${p.cognome} ${p.nome}`} stile={p.avatarStile}
+                        opzioni={p.avatarOpzioni} personId={p.id} foto={p.foto} d={38} />
+                <div style={{ minWidth: 0 }}>
+                  <div className="grassetto">{p.cognome} {p.nome}</div>
+                  <div className="piccolo muto">
+                    {v ? `${v.partite} partite · ${v.squadre.join(", ")}`
+                       : "nessuna partita analizzata"}
+                  </div>
+                </div>
+              </Link>
+
+              {v ? (
+                <div className="numeri-persona">
+                  <Numero valore={v.punti} etichetta="punti" />
+                  <Numero valore={v.attacchiPunto} etichetta="in attacco" />
+                  <Numero valore={v.muriPunto} etichetta="a muro" />
+                  <Numero valore={v.ace} etichetta="ace" />
+                  {/* L'efficienza puo essere negativa, ed e nulla se non ha
+                      mai attaccato: `null` non e zero, e mostrarlo come zero
+                      direbbe una cosa falsa. */}
+                  <Numero valore={v.efficienzaAttacco} etichetta="eff. att." unita="%" />
+                </div>
+              ) : (
+                <p className="piccolo muto" style={{ marginBottom: 0, marginTop: 8 }}>
+                  I numeri compariranno quando una sua partita sara analizzata.
+                </p>
+              )}
+            </Carta>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+function Numero({ valore, etichetta, unita = "" }: {
+  valore: number | null | undefined; etichetta: string; unita?: string;
+}) {
+  return (
+    <div className="numero-persona">
+      <span className="numerico valore">{valore == null ? "—" : `${valore}${unita}`}</span>
+      <span className="piccolo muto">{etichetta}</span>
+    </div>
   );
 }
 

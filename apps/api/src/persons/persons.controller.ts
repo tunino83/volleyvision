@@ -6,7 +6,7 @@ import { SchedaService } from "./scheda.service";
 import { AuthGuard, CurrentUser, type JwtUser } from "../auth/auth.guard";
 import { ZodPipe } from "../common/zod.pipe";
 import { CONFIG } from "../common/config";
-import { AvatarInput, FotoPersonaInput, PersonInput } from "@vv/schema";
+import { AvatarInput, FotoPersonaInput, PersonInput, PreferitoInput } from "@vv/schema";
 import { z } from "zod";
 
 @Controller("persons") @UseGuards(AuthGuard)
@@ -21,6 +21,23 @@ export class PersonsController {
   }
 
   @Get("duplicati") dup(@CurrentUser() u: JwtUser) { return this.svc.possibiliDuplicati(u.sub); }
+
+  /**
+   * Le preferite, per la home: solo quelle, con quel che serve a disegnarne
+   * l'avatar. L'elenco completo porta squadre e conteggi per centinaia di
+   * persone, e la home ne usa cinque.
+   *
+   * Le statistiche non stanno qui: le ha gia `GET /stats/players`. Calcolarle
+   * una seconda volta altrove e il modo sicuro di vedere due numeri diversi
+   * per la stessa cosa.
+   */
+  @Get("preferite") pref(@CurrentUser() u: JwtUser) { return this.svc.preferite(u.sub); }
+
+  @Put(":id/preferita")
+  preferisci(@CurrentUser() u: JwtUser, @Param("id") id: string,
+             @Body(new ZodPipe(PreferitoInput)) d: PreferitoInput) {
+    return this.svc.preferisci(u.sub, id, d.preferita);
+  }
 
   @Post() crea(@CurrentUser() u: JwtUser, @Body(new ZodPipe(PersonInput)) d: PersonInput) {
     return this.svc.crea(u.sub, d);

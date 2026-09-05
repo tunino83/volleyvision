@@ -167,6 +167,17 @@ export const TeamInput = z.object({
 export type TeamInput = z.infer<typeof TeamInput>;
 
 /**
+ * Preferire una squadra o una persona.
+ *
+ * Un booleano e non due rotte (`/preferisci`, `/dimentica`): con due rotte
+ * il client deve sapere lo stato prima di agire, e su due schede aperte
+ * sulla stessa squadra si finisce a chiedere l'azione sbagliata. Mandando lo
+ * stato voluto, l'ultimo che parla ha ragione.
+ */
+export const PreferitoInput = z.object({ preferita: z.boolean() });
+export type PreferitoInput = z.infer<typeof PreferitoInput>;
+
+/**
  * LO STEMMA DELLA SQUADRA
  *
  * Stessa forma dell'avatar delle persone, **stili diversi**: qui non servono

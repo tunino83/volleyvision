@@ -20,6 +20,8 @@ export class PersonsService {
   constructor(private prisma: PrismaService, private audit: AuditService) {}
 
   async elenco(userId: string, q?: string) {
+    const preferite = new Set((await this.prisma.personaPreferita.findMany({
+      where: { userId }, select: { personId: true } })).map((x) => x.personId));
     const persone = await this.prisma.person.findMany({
       where: { ownerId: userId,
         ...(q ? { OR: [{ cognome: { contains: q, mode: "insensitive" } }, { nome: { contains: q, mode: "insensitive" } }] } : {}) },
@@ -35,6 +37,7 @@ export class PersonsService {
       id: p.id, cognome: p.cognome, nome: p.nome,
       dataNascita: p.dataNascita?.toISOString() ?? null,
       partite: p._count.matchPlayers,
+      preferita: preferite.has(p.id),
       // La chiave compare **solo se la foto c'e**. Con 472 persone, un campo
       // sempre presente e valorizzato a `null` costa qualche decina di KB per
       // niente — e questo elenco finisce in locale su ogni dispositivo, dove
@@ -45,6 +48,47 @@ export class PersonsService {
           ? { foto: p.foto.aggiornataIl.getTime() } : {}),
       squadre: [...new Set(p.teamPlayers.map((tp) => `${tp.team.nome} (${tp.team.stagione})`))],
     }));
+  }
+
+  /**
+   * Le sole persone preferite, con quel che serve a disegnarne l'avatar.
+   *
+   * Una rotta a se e non un filtro su `elenco`: quello porta squadre e
+   * conteggi per **tutte** le persone — centinaia di righe — e la home ne
+   * usa cinque. Le statistiche non stanno qui: le ha gia
+   * `GET /stats/players`, e calcolarle una seconda volta in un altro punto
+   * e il modo sicuro di vedere due numeri diversi per la stessa cosa.
+   */
+  async preferite(userId: string) {
+    const righe = await this.prisma.personaPreferita.findMany({
+      where: { userId },
+      include: { person: { select: { id: true, cognome: true, nome: true,
+                                     avatarStile: true, avatarSeme: true,
+                                     avatarOpzioniJson: true,
+                                     foto: { select: { aggiornataIl: true } } } } },
+      orderBy: { creatoIl: "asc" },
+    });
+    return righe.map(({ person: p }) => ({
+      id: p.id, cognome: p.cognome, nome: p.nome,
+      avatarStile: p.avatarStile, avatarSeme: p.avatarSeme,
+      avatarOpzioni: leggiOpzioni(p.avatarOpzioniJson),
+      ...(CONFIG.funzioni.fotoPersone && p.foto
+          ? { foto: p.foto.aggiornataIl.getTime() } : {}),
+    }));
+  }
+
+  async preferisci(userId: string, id: string, preferita: boolean) {
+    await this.mia(userId, id);
+    if (preferita) {
+      await this.prisma.personaPreferita.upsert({
+        where: { userId_personId: { userId, personId: id } },
+        create: { userId, personId: id },
+        update: {},
+      });
+    } else {
+      await this.prisma.personaPreferita.deleteMany({ where: { userId, personId: id } });
+    }
+    return { id, preferita };
   }
 
   /** Segnala coppie con cognome+nome simili: i duplicati arrivano subito. */

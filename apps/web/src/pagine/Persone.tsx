@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
 import { Campo, Carta, Stato } from "../componenti/Ui";
+import { Preferita } from "../componenti/Preferita";
 import { Persona } from "../componenti/Icone";
 
 /**
@@ -71,7 +72,11 @@ export default function Persone() {
                       <td className="piccolo muto">{p.squadre.join(", ") || "—"}</td>
                       <td className="numerico">{p.partite}</td>
                       <td style={{ textAlign: "right" }}>
-                        <button className="piccolo" onClick={() => setModifica(p.id)}>modifica</button>
+                        <span className="riga" style={{ justifyContent: "flex-end" }}>
+                          <Preferita risorsa="persons" id={p.id} preferita={!!p.preferita}
+                                     chiaviDaAggiornare={[["persone"], ["persone", "preferite"]]} />
+                          <button className="piccolo" onClick={() => setModifica(p.id)}>modifica</button>
+                        </span>
                       </td>
                     </tr>
                   )

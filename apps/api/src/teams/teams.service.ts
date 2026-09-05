@@ -50,6 +50,10 @@ export class TeamsService {
 
   async elenco(userId: string) {
     const ids = await this.access.teamIdsVisibili(userId);
+    // Le preferite sono di **chi guarda**, non della squadra: una squadra
+    // condivisa puo essere fra le preferite di uno e non dell'altro.
+    const preferite = new Set((await this.prisma.squadraPreferita.findMany({
+      where: { userId }, select: { teamId: true } })).map((p) => p.teamId));
     const teams = await this.prisma.team.findMany({
       where: { id: { in: ids } },
       include: { owner: { select: { id: true, nome: true, cognome: true } },
@@ -65,6 +69,7 @@ export class TeamsService {
       partite: t._count.matchesHome + t._count.matchesAway,
       proprietario: t.ownerId === userId,
       proprietarioNome: `${t.owner.nome} ${t.owner.cognome}`,
+      preferita: preferite.has(t.id),
       ...stemma(t),
     }));
   }
@@ -109,13 +114,39 @@ export class TeamsService {
       where: { id }, select: { logoStile: true, logoSeme: true, logoOpzioniJson: true,
                                logo: { select: { aggiornatoIl: true } } } });
 
+    const preferita = await this.prisma.squadraPreferita.findUnique({
+      where: { userId_teamId: { userId, teamId: id } }, select: { teamId: true } });
+
     return { id: team.id, nome: team.nome, stagione: team.stagione, proprietario, giocatori,
-             ...stemma(conLogo) };
+             preferita: !!preferita, ...stemma(conLogo) };
   }
 
   async aggiorna(userId: string, id: string, dto: TeamInput) {
     await this.access.team(userId, id, true);
     return this.prisma.team.update({ where: { id }, data: dto });
+  }
+
+  /**
+   * Mettere o togliere una squadra dalle preferite.
+   *
+   * Basta **vederla**, non possederla: la si puo preferire anche se e
+   * condivisa da qualcun altro. E il motivo per cui non e un campo di
+   * `TeamInput` — quello lo puo cambiare solo il proprietario, e qui la
+   * scelta e di chi guarda.
+   */
+  async preferisci(userId: string, id: string, preferita: boolean) {
+    await this.access.team(userId, id);
+    if (preferita) {
+      // `upsert` e non `create`: premere due volte non e un errore.
+      await this.prisma.squadraPreferita.upsert({
+        where: { userId_teamId: { userId, teamId: id } },
+        create: { userId, teamId: id },
+        update: {},
+      });
+    } else {
+      await this.prisma.squadraPreferita.deleteMany({ where: { userId, teamId: id } });
+    }
+    return { id, preferita };
   }
 
   /**

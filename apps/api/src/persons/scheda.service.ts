@@ -114,6 +114,11 @@ export class SchedaService {
           ? (() => { try { return JSON.parse(persona.avatarOpzioniJson!); } catch { return null; } })() : null,
         foto: CONFIG.funzioni.fotoPersone && persona.foto
               ? persona.foto.aggiornataIl.getTime() : null,
+        // Perche la stella sulla scheda parta gia nello stato giusto invece
+        // di accendersi dopo il primo clic.
+        preferita: !!(await this.prisma.personaPreferita.findUnique({
+          where: { userId_personId: { userId, personId: persona.id } },
+          select: { personId: true } })),
       },
       maglie: [...maglie].sort((a, b) => a - b),
       squadre: [...squadre].sort(),

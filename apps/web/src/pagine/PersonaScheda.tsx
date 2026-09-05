@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router-dom";
+import { Preferita } from "../componenti/Preferita";
 import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Indietro, Stato, data } from "../componenti/Ui";
@@ -61,7 +62,13 @@ export default function PersonaScheda() {
                   opzioni={d.persona.avatarOpzioni}
                   personId={d.persona.id} foto={d.persona.foto} />
           <div>
-            <h1 style={{ marginBottom: 4 }}>{d.persona.cognome} {d.persona.nome}</h1>
+            <div className="riga">
+              <h1 style={{ marginBottom: 4 }}>{d.persona.cognome} {d.persona.nome}</h1>
+              <Preferita risorsa="persons" id={d.persona.id}
+                         preferita={!!(d.persona as any).preferita}
+                         chiaviDaAggiornare={[["persona-scheda", d.persona.id],
+                                              ["persone"], ["persone", "preferite"]]} />
+            </div>
             <p className="muto" style={{ margin: 0 }}>
               {d.squadre.join(", ") || "Nessuna squadra"}
               {d.maglie.length > 0 && <> · maglia {d.maglie.join(", ")}</>}

@@ -65,6 +65,19 @@ A differenza delle fotografie delle persone lo stemma **non sta dietro una
 bandiera di funzione**: lo stemma di una societa non e il volto di un
 minorenne, e la ragione per cui `FOTO_PERSONE` e spenta non si applica.
 
+**Le preferite stanno in tabelle a se, non in colonne booleane.**
+`SquadraPreferita` e `PersonaPreferita` legano un utente a cio che vuole
+tenere d'occhio. Il motivo e la condivisione: una squadra si puo condividere
+(`TeamShare`), e con una colonna su `Team` la scelta del proprietario
+comparirebbe sulla home di chi la riceve. **Preferire e un gesto di chi
+guarda, non una proprieta dell'oggetto guardato** — e per questo la rotta
+accetta chiunque veda la squadra, non solo chi la possiede.
+
+Le persone oggi non si condividono (decisione 9d) e una colonna basterebbe,
+ma due meccanismi diversi per la stessa idea vanno spiegati due volte, e
+andrebbero riscritti se un giorno anche le anagrafiche diventassero
+condivisibili.
+
 **I byte sono `BigInt`.** Un video da 5 GB non sta in un intero a 32 bit. La
 serializzazione a numero avviene in `main.ts`: sicura fino a 9 PB.
 
