@@ -52,6 +52,34 @@ if (!existsSync(costruito)) {
   process.exit(1);
 }
 
+/*
+ * L'APK e piu vecchio del sito?
+ *
+ * `cap sync` fa una **copia** dei file web dentro il progetto Android: da
+ * quel momento l'APK e fermo a quella versione, e ricostruire il sito non lo
+ * tocca. E successo davvero — un APK pubblicato senza due funzionalita
+ * aggiunte dopo, senza che niente lo segnalasse — ed e un errore che non si
+ * vede: l'applicazione si apre, funziona, e semplicemente le manca qualcosa.
+ *
+ * Il confronto e sulle date, che e grossolano ma coglie l'unico caso che
+ * conta: si e costruito il sito e ci si e dimenticati dell'APK.
+ */
+const web = join(radice, "apps/web/dist");
+if (existsSync(web)) {
+  const piuRecente = Math.max(...readdirSync(join(web, "assets"), { withFileTypes: true })
+    .filter((d) => d.isFile())
+    .map((d) => statSync(join(web, "assets", d.name)).mtimeMs));
+  if (piuRecente > statSync(costruito).mtimeMs) {
+    console.error([
+      "L'APK e piu vecchio della build del sito: conterrebbe una versione superata.",
+      "Ricostruiscilo prima:",
+      "  cd apps/web && npm run build && npx cap sync android",
+      "  cd android && gradlew.bat assembleDebug",
+    ].join("\n"));
+    process.exit(1);
+  }
+}
+
 const file = `volley-vision-${nome}.apk`;
 mkdirSync(cartella, { recursive: true });
 copyFileSync(costruito, join(cartella, file));

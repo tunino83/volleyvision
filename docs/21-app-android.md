@@ -86,9 +86,15 @@ gia entrambi.
 
 ```
 cd apps/web
-VITE_API_URL="https://IL-TUO-DOMINIO-API" npm run build
-npx cap sync android
+VITE_API_URL="https://IL-TUO-DOMINIO-API" npm run android:sync
 ```
+
+**`android:sync` e non `build` + `cap sync` a mano.** In mezzo c'e un passo che
+toglie `dist/scarica` prima della copia: `cap sync` copia *tutta* `dist` negli
+asset Android, e li dentro c'e l'APK da scaricare. Senza quel passo ogni APK
+si porta dentro il precedente — la 1.1 conteneva i 6 MB della versione prima,
+la 1.2 gli 11 MB della 1.1 — e cresce a valanga senza che niente lo segnali,
+perche l'applicazione funziona lo stesso: e solo grossa.
 
 Poi, con le variabili d'ambiente giuste:
 
@@ -123,7 +129,7 @@ git**: una decina di megabyte per versione, per sempre. E la ragione per cui
 prima o poi va spostato su una release di GitHub — a quel punto cambia solo
 il `percorso` nel modulo generato.
 
-**`VITE_API_URL` va passata al `build`, non al `sync`.** Vite la scrive
+**`VITE_API_URL` va passata a `android:sync`, che dentro fa il `build`.** Vite la scrive
 dentro il JavaScript al momento della costruzione: e la stessa trappola gia
 incontrata su Render (`20-installazione-render.md`). Un APK costruito senza
 quella variabile cerchera `localhost:3001` sul telefono, dove non c'e nulla,

@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit -p tsconfig.json && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "android:sync": "npm run build && node scripts/prepara-android.mjs && cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "^7.6.9",
