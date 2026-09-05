@@ -180,7 +180,7 @@ poi resta acceso.
 |---|---|
 | **Firma** | questo e un APK di *debug*: si installa a mano abilitando le origini sconosciute, ma nessuno store lo accetta. Serve un keystore, e va custodito: **perderlo significa non poter piu aggiornare l'applicazione** |
 | **Account Google Play** | 25 $ una tantum, con tempi di revisione che non dipendono da noi |
-| **Icona e schermata d'avvio** | ora sono quelle predefinite di Capacitor, col logo generico |
+| **Schermata d'avvio** | ancora quella predefinita di Capacitor. L'icona invece e la nostra: `scripts/icone-android.ps1` la ricava da `icona-512.png`, e va rieseguito solo se cambia il marchio |
 | **Prova su un telefono vero** | **non fatta**: l'APK e valido e contiene tutto, ma non l'ha ancora aperto nessuno. Vale in particolare per registrazione e caricamento in secondo piano, che sul telefono possono comportarsi diversamente da come compilano |
 | **Esenzione dal risparmio energetico** | su alcuni telefoni (Xiaomi, Huawei, certi Samsung) il servizio in primo piano viene ucciso lo stesso. Va chiesta all'utente, e non si puo dare per scontato che basti |
 

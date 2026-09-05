@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- Lo strato di fondo dell'icona adattiva: il nero del palazzetto, lo
+         stesso della variabile "sfondo" dell'applicazione. Era bianco perche
+         e il valore che mette Capacitor quando crea il progetto, e su bianco
+         il giallo del pallone quasi sparisce.
+
+         Deve restare esattamente questo colore: il disegno davanti porta con
+         se lo stesso fondo, e se i due valori divergessero comparirebbe un
+         quadrato piu chiaro dentro l'icona. -->
+    <color name="ic_launcher_background">#080C12</color>
 </resources>
