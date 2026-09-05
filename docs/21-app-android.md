@@ -86,23 +86,44 @@ gia entrambi.
 
 ```
 cd apps/web
-VITE_API_URL="https://IL-TUO-DOMINIO-API" npm run android:sync
+VITE_API_URL="https://volleyvision-api-qtc1.onrender.com" npm run android:sync
 ```
 
-**`android:sync` e non `build` + `cap sync` a mano.** In mezzo c'e un passo che
-toglie `dist/scarica` prima della copia: `cap sync` copia *tutta* `dist` negli
-asset Android, e li dentro c'e l'APK da scaricare. Senza quel passo ogni APK
-si porta dentro il precedente — la 1.1 conteneva i 6 MB della versione prima,
-la 1.2 gli 11 MB della 1.1 — e cresce a valanga senza che niente lo segnali,
-perche l'applicazione funziona lo stesso: e solo grossa.
+**L'indirizzo dell'API e quello, con il suffisso.** Render assegna
+`volleyvision-api.onrender.com` solo se e libero, e non lo era: quel nome
+appartiene a un altro servizio, che risponde tranquillamente `{"service":
+"SideOut"}`. Puntarci l'applicazione non darebbe un errore evidente, darebbe
+risposte sbagliate da uno sconosciuto. L'indirizzo vero si legge dal bundle
+del sito in esercizio, dove e compilato dentro.
+
+**`android:sync` e non `build` + `cap sync` a mano.** In mezzo c'e un passo
+che controlla due cose e ne corregge una, e nessuna delle due si vede
+guardando l'APK finito:
+
+1. **Rifiuta se il sito costruito contiene ancora `localhost:3001`.** Dentro
+   l'APK quell'indirizzo e il telefono stesso: l'applicazione si apre, sembra
+   sana, e ogni schermata e vuota con "il server non risponde". **E successo**,
+   ed e successo a chi aveva scritto qui sotto l'avvertimento. Una nota in un
+   documento la legge chi il problema lo conosce gia; il posto giusto per una
+   regola e dove si viola.
+2. **Toglie `dist/scarica` prima della copia.** `cap sync` copia *tutta*
+   `dist` negli asset Android, e li dentro c'e l'APK da scaricare: senza quel
+   passo ogni versione si porta dentro la precedente — la 1.1 conteneva i 6 MB
+   di quella prima, la 1.2 gli 11 MB della 1.1 — e cresce a valanga senza che
+   niente lo segnali, perche l'applicazione funziona lo stesso: e solo grossa.
 
 Poi, con le variabili d'ambiente giuste:
 
 ```
 JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"
 ANDROID_HOME="%LOCALAPPDATA%\Android\Sdk"
-cd android && gradlew.bat assembleDebug
+cd android && gradlew.bat clean assembleDebug
 ```
+
+**`clean` non e prudenza.** La build incrementale impacchetta senza
+comprimere: un APK di 16,7 MB il cui contenuto scompattato ne pesa 13,7 —
+un archivio piu grande di cio che contiene. Da pulito lo stesso APK pesa
+6,0 MB.
 
 L'APK esce in `android/app/build/outputs/apk/debug/app-debug.apk`. Per
 pubblicarlo sul sito:
@@ -129,11 +150,16 @@ git**: una decina di megabyte per versione, per sempre. E la ragione per cui
 prima o poi va spostato su una release di GitHub — a quel punto cambia solo
 il `percorso` nel modulo generato.
 
-**`VITE_API_URL` va passata a `android:sync`, che dentro fa il `build`.** Vite la scrive
-dentro il JavaScript al momento della costruzione: e la stessa trappola gia
-incontrata su Render (`20-installazione-render.md`). Un APK costruito senza
-quella variabile cerchera `localhost:3001` sul telefono, dove non c'e nulla,
-e l'accesso non funzionera.
+**`VITE_API_URL` va passata a `android:sync`, che dentro fa il `build`.** Vite
+la scrive dentro il JavaScript al momento della costruzione: e la stessa
+trappola gia incontrata su Render (`20-installazione-render.md`). Un APK
+costruito senza quella variabile cerchera `localhost:3001` sul telefono, dove
+non c'e nulla.
+
+Questo paragrafo esisteva gia quando l'errore e stato commesso — motivo per
+cui adesso c'e anche un controllo che rifiuta, e non solo un avvertimento che
+si puo non leggere. **La 1.2 e stata pubblicata cosi e non funziona: usare la
+1.3 o successive.**
 
 ## Due scelte da conoscere
 
