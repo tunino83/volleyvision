@@ -323,15 +323,19 @@ export function PopupInstallazione() {
 
 
 /*
- * Dove sta l'APK.
+ * Dove sta l'APK: lo dice `src/apk.ts`, generato da `scripts/pubblica-apk.mjs`
+ * a partire dalla versione dichiarata in `android/app/build.gradle`.
  *
- * Oggi fra i file statici del sito. **Non e la sistemazione definitiva**: e
- * un binario di sei megabyte che cambia a ogni versione, e versionarlo fa
- * crescere la cronologia per sempre. La casa giusta e una release su
- * GitHub, o lo store quando ci sara: e per questo che l'indirizzo e una
- * costante e non e scritto nel testo — cambiarlo sara una riga.
+ * Una fonte sola. Scrivendo la versione qui **e** nel manifesto Android,
+ * prima o poi divergono, e il giorno che succede il sito annuncia una
+ * versione e ne consegna un'altra senza che niente lo segnali.
+ *
+ * Restano i file statici del sito, e **non e la sistemazione definitiva**:
+ * ogni versione e una decina di megabyte che entrano nella cronologia di git
+ * per sempre. La casa giusta e una release su GitHub, o lo store quando ci
+ * sara — e allora cambia solo il `percorso` in quel modulo generato.
  */
-const APK = "/scarica/volley-vision.apk";
+import { APK } from "../apk";
 
 /**
  * L'invito a scaricare l'applicazione Android.
@@ -352,7 +356,19 @@ export function ScaricaAndroid({ daComputer = false }: { daComputer?: boolean })
           : "Su telefono Volley Vision e un'applicazione a se. Questa pagina funziona lo stesso, ma l'applicazione si apre dalla schermata Home e non dipende dal browser."}
       </p>
 
-      <a className="bottone" href={APK} download>Scarica per Android</a>
+      <a className="bottone" href={APK.percorso} download>Scarica per Android</a>
+
+      {/*
+        * Versione e peso accanto al pulsante.
+        *
+        * Il peso perche su rete dati dieci megabyte non sono indifferenti, e
+        * scoprirlo a scaricamento avviato e tardi. La versione perche chi
+        * ritrova il file nei Download fra due mesi possa sapere cosa ha: e
+        * anche il motivo per cui e nel nome del file, non solo qui.
+        */}
+      <p className="piccolo muto" style={{ marginTop: 6, marginBottom: 0 }}>
+        Versione <b>{APK.versione}</b> · {APK.megabyte} MB
+      </p>
 
       {/*
         * Detto prima e non dopo: Android mostra un avviso, e chi non se lo

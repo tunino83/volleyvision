@@ -98,7 +98,30 @@ ANDROID_HOME="%LOCALAPPDATA%\Android\Sdk"
 cd android && gradlew.bat assembleDebug
 ```
 
-L'APK esce in `android/app/build/outputs/apk/debug/app-debug.apk`.
+L'APK esce in `android/app/build/outputs/apk/debug/app-debug.apk`. Per
+pubblicarlo sul sito:
+
+```
+node scripts/pubblica-apk.mjs
+```
+
+Copia il file in `apps/web/public/scarica/` **con la versione nel nome**
+(`volley-vision-1.1.apk`) e rigenera `apps/web/src/apk.ts`, che il sito
+importa per il collegamento e per il testo accanto al pulsante.
+
+**La versione sta in un posto solo**, `android/app/build.gradle`. Scritta
+anche altrove, prima o poi diverge — e il giorno che succede il sito annuncia
+una versione e ne consegna un'altra, senza che niente lo segnali. Ricordarsi
+di alzare `versionCode` a ogni pubblicazione: Android rifiuta di installare
+sopra un codice piu alto.
+
+Il nome versionato serve a chi ha scaricato la settimana prima: guardando il
+file nella cartella Download non avrebbe altro modo di sapere se e l'ultimo.
+Le versioni precedenti restano raggiungibili, cosi se una si rivela guasta su
+un modello di telefono si torna indietro. **Il prezzo e la cronologia di
+git**: una decina di megabyte per versione, per sempre. E la ragione per cui
+prima o poi va spostato su una release di GitHub — a quel punto cambia solo
+il `percorso` nel modulo generato.
 
 **`VITE_API_URL` va passata al `build`, non al `sync`.** Vite la scrive
 dentro il JavaScript al momento della costruzione: e la stessa trappola gia
