@@ -62,7 +62,7 @@ export default function Login() {
         * Non dentro l'app nativa, dove sarebbe l'offerta di scaricare se
         * stessa.
         */}
-      {!inAppNativa() && <ScaricaAndroid daComputer={!piattaforma.mobile} />}
+      {!inAppNativa() && <ScaricaAndroid daComputer={!piattaforma.mobile} chiuso />}
     </div>
   );
 }

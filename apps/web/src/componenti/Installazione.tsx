@@ -345,10 +345,33 @@ import { APK } from "../apk";
  * computer serve, perche il collegamento lo si manda a se stessi — per
  * questo compare in entrambi i casi, con parole diverse.
  */
-export function ScaricaAndroid({ daComputer = false }: { daComputer?: boolean }) {
+export function ScaricaAndroid({ daComputer = false, chiuso = false }: {
+  daComputer?: boolean; chiuso?: boolean;
+}) {
+  /*
+   * Chiuso di suo dove lo spazio conta.
+   *
+   * Nella pagina d'accesso il compito e uno: entrare. Un riquadro aperto con
+   * tre paragrafi e un pulsante giallo compete con il modulo — su telefono lo
+   * spinge sotto la piega — per un'informazione che serve una volta sola,
+   * la prima. Una riga sola la dice comunque a chi non la conosce, e chi la
+   * conosce la scavalca senza leggerla.
+   */
+  const [aperto, setAperto] = useState(!chiuso);
+
+  if (!aperto) {
+    return (
+      <button className="riga apri-android" onClick={() => setAperto(true)}>
+        <I.Android d={18} />
+        <span>Scarica l&apos;app Android</span>
+        <span className="muto" aria-hidden>›</span>
+      </button>
+    );
+  }
+
   return (
     <Carta className="nota-installazione">
-      <h3><I.Pallone d={17} /> Volley Vision per Android</h3>
+      <h3><I.Android d={17} /> Volley Vision per Android</h3>
 
       <p className="piccolo muto">
         {daComputer
@@ -379,6 +402,13 @@ export function ScaricaAndroid({ daComputer = false }: { daComputer?: boolean })
         e normale per un'applicazione che non arriva dal Play Store. La versione
         firmata per lo store arrivera piu avanti.
       </p>
+
+      {/* Si richiude solo dove era chiuso in partenza: altrove il riquadro e
+          il contenuto della sezione, e un comando per farlo sparire non
+          avrebbe senso. */}
+      {chiuso && (
+        <button className="piccolo" onClick={() => setAperto(false)}>Chiudi</button>
+      )}
     </Carta>
   );
 }

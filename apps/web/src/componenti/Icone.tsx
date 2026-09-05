@@ -229,6 +229,27 @@ export function Esci({ d = 20, className, style }: P) {
 }
 
 /**
+ * Il robottino di Android.
+ *
+ * L'unica icona qui che non riguarda la pallavolo, ed e voluto: dev'essere
+ * riconosciuta a colpo d'occhio come "quel sistema li", e una forma inventata
+ * da noi non lo sarebbe. Solo la testa — antenne, occhi, calotta — perche a
+ * diciassette pixel il corpo diventa una macchia.
+ */
+export function Android({ d = 20, className, style }: P) {
+  return (
+    <svg {...base(d, style)} className={className}>
+      <path d="M4.5 13.5a7.5 7.5 0 0 1 15 0z" />
+      <path d="M7.4 7.2 5.9 4.8M16.6 7.2l1.5-2.4" />
+      {/* Gli occhi sono pieni: come contorni, a questa dimensione,
+          diventerebbero due anelli grigi indistinguibili. */}
+      <circle cx="9.3" cy="10.4" r=".85" fill="currentColor" stroke="none" />
+      <circle cx="14.7" cy="10.4" r=".85" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
  * Il marchio: pallone piu nome. Sta qui e non nell'intestazione perche lo
  * useranno anche l'accesso, gli stati vuoti e — un giorno — la schermata di
  * avvio delle shell native.

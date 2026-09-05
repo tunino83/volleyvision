@@ -1342,3 +1342,15 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
   .riga-squadra-numeri { grid-column: 2; }
   .riga-squadra > .piccolo.muto:not(.riga-squadra-numeri) { grid-column: 2; }
 }
+
+/* La riga che apre il riquadro dell'app Android nella pagina d'accesso.
+   Un pulsante, non un collegamento: non porta da nessuna parte, apre. */
+.apri-android {
+  width: 100%; justify-content: center; gap: var(--sp2);
+  margin-top: var(--sp3); padding: 10px var(--sp3);
+  background: transparent; border: 1px solid var(--bordo);
+  border-radius: var(--r); color: var(--inchiostro-tenue);
+  font-size: var(--t-piccolo); cursor: pointer;
+}
+.apri-android:hover { border-color: var(--bordo-forte); color: var(--inchiostro); }
+.apri-android:hover svg { color: var(--palla); }
