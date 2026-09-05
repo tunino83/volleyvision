@@ -18,6 +18,21 @@ export class StagioneController {
       stagione: q.stagione, dal: q.dal, al: q.al,
     });
   }
+
+  /**
+   * Gli stessi numeri divisi per partita, per gli andamenti nel tempo.
+   *
+   * `personId` o `teamId` dicono **di chi** sono i numeri; senza nessuno dei
+   * due sono quelli della partita intera. Il soggetto torna nella risposta,
+   * cosi la schermata lo dichiara invece di ricordarselo.
+   */
+  @Get("matches")
+  partite(@CurrentUser() u: JwtUser, @Query() q: any) {
+    return this.svc.perPartita(u.sub, {
+      competitionId: q.competitionId, teamId: q.teamId, personId: q.personId,
+      stagione: q.stagione, dal: q.dal, al: q.al,
+    });
+  }
 }
 
 @Controller("matches/:id/analysis") @UseGuards(AuthGuard)

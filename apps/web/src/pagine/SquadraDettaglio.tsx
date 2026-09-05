@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
-import { Campo, Carta, Indietro, Stato } from "../componenti/Ui";
+import { Campo, Carta, Indietro, Stato, data } from "../componenti/Ui";
+import { Colonne } from "../componenti/Grafici";
 import { Avatar, NOME_API, STILI, type Stile } from "../componenti/Avatar";
 import { preparaFoto, byteDiDataUri } from "../componenti/ritaglia";
 import { AvatarPersonalizza } from "../componenti/AvatarPersonalizza";
@@ -98,6 +99,10 @@ export default function SquadraDettaglio() {
           )}
         </div>
       </div>
+
+      {/* L'andamento della squadra: e la domanda che ci si fa aprendo la sua
+          pagina, e finora qui non c'era nessun numero. */}
+      {id && <AndamentoSquadra teamId={id} />}
 
       {/* Solo per chi la possiede: su una squadra condivisa in sola lettura,
           comandi che il server rifiuterebbe comunque (regola 2b). */}
@@ -427,5 +432,47 @@ function Figurina({ squadraId, g, nuova, onFatto, onChiudi }: {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Come e andata questa squadra, partita per partita.
+ *
+ * I numeri sono del **suo lato del campo**, non della partita intera: e
+ * `/stats/matches?teamId=` a filtrarli, e la risposta dichiara il soggetto
+ * perche la schermata non debba dedurlo.
+ *
+ * Sotto le tre partite non si disegna. Due o tre colonne non sono un
+ * andamento — sono numeri messi vicini — e la riga della media fra cosi
+ * pochi punti suggerisce una tendenza che non esiste.
+ */
+function AndamentoSquadra({ teamId }: { teamId: string }) {
+  const q = useQuery({
+    queryKey: ["stats", "partite", "squadra", teamId],
+    queryFn: () => API.get<any>(`/stats/matches?teamId=${teamId}`),
+  });
+
+  const voci: any[] = q.data?.voci ?? [];
+  if (q.isLoading || voci.length < 3) return null;
+
+  // L'avversario, non la data: su una pagina di squadra "contro chi" e cio
+  // che fa riconoscere la partita a colpo d'occhio. Per questo la risposta
+  // porta anche gli identificativi: due squadre possono chiamarsi uguale.
+  const avversario = (v: any) => (v.casaId === teamId ? v.ospite : v.casa);
+
+  return (
+    <Carta style={{ marginBottom: "var(--sp4)" }}>
+      <div className="riga-sp">
+        <span className="etichetta">Punti per partita</span>
+        <span className="piccolo muto">
+          {voci.length} partite analizzate, dalla piu vecchia
+        </span>
+      </div>
+      <Colonne dati={voci.map((v) => ({
+        etichetta: avversario(v).split(" ").pop()!.slice(0, 6),
+        valore: v.punti,
+        titolo: `${data(v.data)} · contro ${avversario(v)}: ${v.punti} punti`,
+      }))} />
+    </Carta>
   );
 }

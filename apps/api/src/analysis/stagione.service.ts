@@ -47,10 +47,16 @@ export interface VoceStagione extends Omit<VoceGiocatore, "team" | "jersey"> {
 export class StagioneService {
   constructor(private prisma: PrismaService, private access: AccessService) {}
 
-  async perGiocatore(userId: string, f: FiltroStagione) {
-    const ids = await this.access.competitionIdsVisibili(userId);
-
-    const partite = await this.prisma.match.findMany({
+  /**
+   * Le partite che rientrano nel filtro, con quel che serve a contare.
+   *
+   * Estratta perche i due metodi pubblici partono dallo stesso insieme: uno
+   * lo somma per persona, l'altro lo tiene diviso per partita. Duplicare la
+   * query significherebbe due filtri che col tempo divergono, e due schermate
+   * che dicono di guardare le stesse partite guardandone di diverse.
+   */
+  private partiteDelFiltro(userId: string, f: FiltroStagione, ids: string[]) {
+    return this.prisma.match.findMany({
       where: {
         competitionId: f.competitionId ? f.competitionId : { in: ids },
         stato: "READY",
@@ -69,6 +75,11 @@ export class StagioneService {
       },
       orderBy: { data: "desc" },
     });
+  }
+
+  async perGiocatore(userId: string, f: FiltroStagione) {
+    const ids = await this.access.competitionIdsVisibili(userId);
+    const partite = await this.partiteDelFiltro(userId, f, ids);
 
     const per = new Map<string, VoceStagione>();
     const squadrePer = new Map<string, Set<string>>();
@@ -154,6 +165,122 @@ export class StagioneService {
         tocchiSenzaGiocatore,
         quotaSenzaGiocatore: tocchiTotali
           ? Math.round((tocchiSenzaGiocatore / tocchiTotali) * 1000) / 10 : 0,
+      },
+    };
+  }
+
+  /**
+   * GLI STESSI NUMERI, TENUTI DIVISI PER PARTITA.
+   *
+   * <h3>Perche non bastava `perGiocatore`</h3>
+   *
+   * Quello somma tutto in un totale di stagione, e un totale non risponde alla
+   * domanda che ci si fa piu spesso: **sta migliorando?**. Per rispondere
+   * serve la stessa misura ripetuta nel tempo, e una somma la perde per
+   * costruzione. Non e un dettaglio di comodo: senza questa rotta la home non
+   * poteva mostrare nessun andamento, perche l'elenco delle partite non porta
+   * con se alcun valore per partita.
+   *
+   * <h3>Di chi sono i numeri</h3>
+   *
+   * Lo decide il filtro, e i tre casi sono tre domande diverse:
+   *
+   * <ul>
+   * <li>`personId` — come e andato **quel giocatore**, partita per partita</li>
+   * <li>`teamId` — come e andata **quella squadra**, dal suo lato del campo</li>
+   * <li>nessuno dei due — la partita intera, entrambe le squadre insieme</li>
+   * </ul>
+   *
+   * <h3>Ordine</h3>
+   *
+   * Dalla piu vecchia alla piu recente, al contrario dell'elenco partite. Un
+   * andamento si legge da sinistra a destra nel verso del tempo, e girarlo
+   * nel client sarebbe un dettaglio che prima o poi qualcuno dimentica.
+   */
+  async perPartita(userId: string, f: FiltroStagione & { personId?: string }) {
+    const ids = await this.access.competitionIdsVisibili(userId);
+    const partite = await this.partiteDelFiltro(userId, f, ids);
+
+    const voci = [];
+    let senzaAnalisi = 0;
+
+    for (const m of partite) {
+      if (!m.analisi) { senzaAnalisi++; continue; }
+      let pkg: AnalysisPackage;
+      try { pkg = JSON.parse(m.analisi.pacchettoJson); } catch { senzaAnalisi++; continue; }
+
+      const r = statisticheGiocatori(pkg.events);
+      const perLatoMaglia = new Map<string, (typeof m.giocatori)[number]>();
+      for (const g of m.giocatori) perLatoMaglia.set(`${g.lato}-${g.numeroMaglia}`, g);
+
+      // Il lato della squadra filtrata. Puo essere entrambi, se una squadra
+      // gioca contro se stessa in amichevole: caso strano ma legittimo, e
+      // sommare due volte darebbe il doppio dei punti veri.
+      const lato = f.teamId
+        ? (m.homeTeamId === f.teamId ? "h" : m.awayTeamId === f.teamId ? "a" : null)
+        : null;
+
+      const scelte = r.voci.filter((v) => {
+        if (f.personId) return perLatoMaglia.get(`${v.team}-${v.jersey}`)?.personId === f.personId;
+        if (lato) return v.team === lato;
+        return true;
+      });
+
+      // Una persona che non ha giocato quella partita non produce un punto a
+      // zero: produce **niente**. Zero direbbe "ha giocato e non ha fatto
+      // punti", che e un'altra cosa, e falserebbe ogni media.
+      if (f.personId && scelte.length === 0) continue;
+
+      const somma = (k: keyof (typeof scelte)[number]) =>
+        scelte.reduce((s, v) => s + (Number(v[k]) || 0), 0);
+
+      const attacchi = somma("attacchi");
+      voci.push({
+        matchId: m.id,
+        data: m.data.toISOString(),
+        casa: m.homeTeam.nome,
+        ospite: m.awayTeam.nome,
+        // Gli identificativi e non solo i nomi: una pagina di squadra deve
+        // poter dire "contro chi" senza confrontare stringhe, e due squadre
+        // possono chiamarsi uguale in campionati diversi.
+        casaId: m.homeTeamId,
+        ospiteId: m.awayTeamId,
+        campionato: m.competition.nome,
+        stagione: m.competition.stagione,
+        punti: somma("punti"),
+        attacchi,
+        attacchiPunto: somma("attacchiPunto"),
+        attacchiErrore: somma("attacchiErrore"),
+        attacchiMurati: somma("attacchiMurati"),
+        battute: somma("battute"),
+        ace: somma("ace"),
+        erroriServizio: somma("erroriServizio"),
+        muriPunto: somma("muriPunto"),
+        ricezioni: somma("ricezioni"),
+        erroriRicezione: somma("erroriRicezione"),
+        difese: somma("difese"),
+        alzate: somma("alzate"),
+        tocchi: somma("tocchi"),
+        // `null` e non zero quando non ha mai attaccato: sono due cose
+        // diverse, e un grafico che disegna zero racconta una brutta partita
+        // al posto di una partita senza attacchi.
+        efficienzaAttacco: attacchi
+          ? Math.round(((somma("attacchiPunto") - somma("attacchiErrore")
+                         - somma("attacchiMurati")) / attacchi) * 100)
+          : null,
+      });
+    }
+
+    voci.reverse();
+
+    return {
+      voci,
+      insieme: {
+        partiteConsiderate: voci.length,
+        partiteTrovate: partite.length,
+        senzaAnalisi,
+        /** Di chi sono i numeri: la schermata deve poterlo dire, non dedurlo. */
+        soggetto: f.personId ? "persona" : f.teamId ? "squadra" : "partita",
       },
     };
   }

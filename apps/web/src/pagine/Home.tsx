@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Pillola, Squadre as Duo, Stato, data } from "../componenti/Ui";
-import { Righe } from "../componenti/Grafici";
+import { Colonne, Righe } from "../componenti/Grafici";
 import { Stemma } from "../componenti/LogoSquadra";
 import { Avatar } from "../componenti/Avatar";
 
@@ -34,6 +34,10 @@ export default function Home() {
     queryKey: ["persone", "preferite"],
     queryFn: () => API.get<any[]>("/persons/preferite"),
   });
+  const andamento = useQuery({
+    queryKey: ["stats", "partite", "home"],
+    queryFn: () => API.get<any>("/stats/matches"),
+  });
 
   const primoAccesso = !squadre.isLoading && (squadre.data?.length ?? 0) === 0;
   const preferite = (squadre.data ?? []).filter((t) => t.preferita);
@@ -60,6 +64,7 @@ export default function Home() {
       )}
 
       {!primoAccesso && <Sintesi stagione={stagione} />}
+      {!primoAccesso && <Andamento q={andamento} />}
 
       <h2>Partite recenti</h2>
       <Stato caricamento={partite.isLoading} errore={partite.error}
@@ -92,6 +97,44 @@ export default function Home() {
       {!primoAccesso && <SquadrePreferite squadre={squadre} preferite={preferite} />}
       {!primoAccesso && <PersonePreferite persone={persone} stagione={stagione} />}
     </>
+  );
+}
+
+/**
+ * L'andamento nel tempo: una colonna per partita.
+ *
+ * E il grafico che in questa schermata era stato tolto, perche l'elenco delle
+ * partite non porta con se nessun valore per partita e sarebbe uscito vuoto.
+ * Ora i valori arrivano da `/stats/matches`, che e nato per questo.
+ *
+ * Sotto le due partite non si disegna: due colonne non sono un andamento,
+ * sono due numeri messi vicini, e una linea della media fra due punti
+ * suggerisce una tendenza che non esiste.
+ */
+function Andamento({ q }: { q: any }) {
+  const voci: any[] = q.data?.voci ?? [];
+  if (q.isLoading || voci.length < 3) return null;
+
+  const dati = voci.map((v) => ({
+    etichetta: data(v.data).slice(0, 5),
+    valore: v.punti,
+    titolo: `${v.casa} — ${v.ospite}: ${v.punti} punti`,
+  }));
+
+  return (
+    <Carta style={{ marginBottom: "var(--sp4)" }}>
+      <div className="riga-sp">
+        <span className="etichetta">Punti per partita</span>
+        <span className="piccolo muto">dalla piu vecchia</span>
+      </div>
+      <Colonne dati={dati} />
+      <p className="piccolo muto" style={{ margin: 0 }}>
+        {/* Cosa si sta guardando: senza, questi numeri sembrano "i tuoi" e
+            invece sono di entrambe le squadre. */}
+        Punti di <b>entrambe le squadre</b> in ogni partita analizzata. La
+        riga orizzontale e la media.
+      </p>
+    </Carta>
   );
 }
 
