@@ -45,7 +45,11 @@ export class MatchesService {
         // `owner` col solo nome: serve a dire "condivisa da Marcello", non
         // a portarsi dietro un utente intero per ogni riga.
         include: { competition: { include: { owner: { select: { nome: true, cognome: true } } } },
-                   homeTeam: true, awayTeam: true, video: true },
+                   // Lo stemma segue la squadra ovunque compaia il suo nome,
+                   // schede delle partite comprese: solo la data, mai i byte.
+                   homeTeam: { include: { logo: { select: { aggiornatoIl: true } } } },
+                   awayTeam: { include: { logo: { select: { aggiornatoIl: true } } } },
+                   video: true },
         orderBy: { data: "desc" },
         skip: (pagina - 1) * perPagina,
         take: perPagina,
@@ -77,8 +81,8 @@ export class MatchesService {
       statoAggregato: aggregateStatus(x.stato),
       erroreMessaggio: x.erroreMessaggio,
       competition: { id: x.competition.id, nome: x.competition.nome, stagione: x.competition.stagione },
-      home: { id: x.homeTeam.id, nome: x.homeTeam.nome },
-      away: { id: x.awayTeam.id, nome: x.awayTeam.nome },
+      home: squadra(x.homeTeam),
+      away: squadra(x.awayTeam),
       citta: x.citta, campo: x.campo, arbitri: x.arbitri, numeroSet: x.numeroSet,
       tag: JSON.parse(x.tagJson ?? "[]"),
       revisioneAnalisi: x.revisioneAnalisi,
@@ -113,7 +117,9 @@ export class MatchesService {
     const m = await this.prisma.match.findUniqueOrThrow({
       where: { id },
       include: { competition: { include: { owner: { select: { nome: true, cognome: true } } } },
-                 homeTeam: true, awayTeam: true, video: true } });
+                 homeTeam: { include: { logo: { select: { aggiornatoIl: true } } } },
+                 awayTeam: { include: { logo: { select: { aggiornatoIl: true } } } },
+                 video: true } });
     const [giocatori, formazioni, sostituzioni, analisi] = await Promise.all([
       this.prisma.matchPlayer.findMany({ where: { matchId: id }, orderBy: [{ lato: "asc" }, { numeroMaglia: "asc" }] }),
       this.prisma.lineup.findMany({ where: { matchId: id }, orderBy: [{ set: "asc" }, { lato: "asc" }] }),
@@ -467,4 +473,26 @@ export class MatchesService {
     await this.audit.log(userId, "rielaborazione", "match", id);
     return this.dettaglio(userId, id);
   }
+}
+
+/**
+ * La squadra come la vede una scheda partita: nome e stemma, nient'altro.
+ *
+ * Lo stemma caricato si appiattisce a **un numero**, la sua versione — mai i
+ * byte. E lo stesso accorgimento delle fotografie: lasciarlo uscire come
+ * oggetto lo renderebbe comunque "vero" per il client, che lo userebbe come
+ * versione nell'indirizzo, e lo stemma aggiornato non comparirebbe mai.
+ */
+function squadra(t: { id: string; nome: string; logoStile: string | null;
+                      logoSeme: string | null; logoOpzioniJson: string | null;
+                      logo?: { aggiornatoIl: Date } | null }) {
+  return {
+    id: t.id, nome: t.nome,
+    logoStile: t.logoStile, logoSeme: t.logoSeme,
+    logoOpzioni: (() => {
+      if (!t.logoOpzioniJson) return null;
+      try { return JSON.parse(t.logoOpzioniJson); } catch { return null; }
+    })(),
+    logo: t.logo ? t.logo.aggiornatoIl.getTime() : null,
+  };
 }

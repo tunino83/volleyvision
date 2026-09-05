@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { LogoSquadra } from "./LogoSquadra";
 import type { CSSProperties, ReactNode } from "react";
 
 export function Carta({ children, onClick, className = "", style }: {
@@ -115,13 +116,29 @@ export const Pillola = ({ stato }: { stato: string }) =>
  * squadre: elenco partite, dettaglio, statistiche. Averla in un posto solo
  * significa che cambiarla la cambia dappertutto.
  */
-export const Squadre = ({ casa, ospite, parziali }: {
+export const Squadre = ({ casa, ospite, parziali, squadraCasa, squadraOspite }: {
   casa: string; ospite: string;
   parziali?: Array<{ hPt: number; aPt: number }>;
+  /*
+   * Le squadre intere, quando ci sono, per mostrarne lo stemma.
+   *
+   * Facoltative: qualche chiamante ha solo i due nomi (le formazioni salvate
+   * dentro una partita, per esempio, che ne conservano una copia). Renderle
+   * obbligatorie avrebbe costretto a inventare stemmi dove non c'e la
+   * squadra, e uno stemma inventato e peggio di nessuno stemma.
+   */
+  squadraCasa?: { id: string; nome: string; logoStile?: string | null;
+                  logoSeme?: string | null; logoOpzioni?: Record<string, string[]> | null;
+                  logo?: number | null } | null;
+  squadraOspite?: typeof squadraCasa;
 }) => (
   <span className="incontro">
     <span className="lato">
-      <span className="fascia casa" />
+      {squadraCasa
+        ? <LogoSquadra nome={squadraCasa.nome} stile={squadraCasa.logoStile}
+                       seme={squadraCasa.logoSeme} opzioni={squadraCasa.logoOpzioni}
+                       teamId={squadraCasa.id} logo={squadraCasa.logo} d={22} />
+        : <span className="fascia casa" />}
       <span className="nome">{casa}</span>
     </span>
     <span className="parziali">
@@ -130,7 +147,11 @@ export const Squadre = ({ casa, ospite, parziali }: {
         : "vs"}
     </span>
     <span className="lato destra">
-      <span className="fascia ospite" />
+      {squadraOspite
+        ? <LogoSquadra nome={squadraOspite.nome} stile={squadraOspite.logoStile}
+                       seme={squadraOspite.logoSeme} opzioni={squadraOspite.logoOpzioni}
+                       teamId={squadraOspite.id} logo={squadraOspite.logo} d={22} />
+        : <span className="fascia ospite" />}
       <span className="nome">{ospite}</span>
     </span>
   </span>

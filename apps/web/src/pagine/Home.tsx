@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Pillola, Squadre as Duo, Stato, data } from "../componenti/Ui";
 import { Righe } from "../componenti/Grafici";
-import * as I from "../componenti/Icone";
+import { LogoSquadra } from "../componenti/LogoSquadra";
 
 /**
  * La prima schermata: cosa e successo e cosa c'e da fare.
@@ -57,11 +57,25 @@ export default function Home() {
       <Stato caricamento={partite.isLoading} errore={partite.error}
              vuoto={partite.data?.elementi.length === 0} messaggioVuoto="Nessuna partita."
              azione={<button className="primario" onClick={() => nav("/partite/nuova")}>Crea la prima</button>}>
-        <div className="colonna">
+        {/*
+          * A griglia, non in colonna.
+          *
+          * Una scheda partita e alta due righe: su uno schermo largo,
+          * distesa per tutta la larghezza, e un nastro quasi vuoto con
+          * quattro parole in mezzo. Tre per riga occupano lo spazio che
+          * hanno invece di quello che c'e, e cinque partite si vedono
+          * insieme invece che una sotto l'altra.
+          *
+          * `auto-fill` con un minimo, e non un numero fisso di colonne:
+          * cosi la stessa regola vale dal telefono allo schermo largo senza
+          * una soglia per ogni formato.
+          */}
+        <div className="griglia-schede">
           {partite.data?.elementi.map((m: any) => (
             <Carta key={m.id} onClick={() => nav(`/partite/${m.id}`)}>
               <div className="riga-sp">
-                <Duo casa={m.home.nome} ospite={m.away.nome} />
+                <Duo casa={m.home.nome} ospite={m.away.nome}
+                   squadraCasa={m.home} squadraOspite={m.away} />
                 <Pillola stato={m.stato} />
               </div>
               <div className="piccolo muto" style={{ marginTop: 4 }}>
@@ -87,7 +101,10 @@ export default function Home() {
         <Carta className="elenco-squadre">
           {squadre.data?.map((t) => (
             <button key={t.id} className="riga-squadra" onClick={() => nav(`/squadre/${t.id}`)}>
-              <I.Maglia d={17} className="muto" />
+              {/* Lo stemma al posto dell'icona generica: erano tutte uguali,
+                  e un elenco di icone identiche non aiuta a trovare niente. */}
+              <LogoSquadra nome={t.nome} stile={t.logoStile} seme={t.logoSeme}
+                           opzioni={t.logoOpzioni} teamId={t.id} logo={t.logo} d={22} />
               <span className="riga-squadra-nome">
                 {t.nome}
                 {!t.proprietario && <em className="piccolo muto"> · condivisa</em>}

@@ -1354,3 +1354,31 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 }
 .apri-android:hover { border-color: var(--bordo-forte); color: var(--inchiostro); }
 .apri-android:hover svg { color: var(--palla); }
+
+/* Le schede a griglia: dal telefono (una colonna) allo schermo largo (tre o
+   piu) con una regola sola. `auto-fill` e non un numero fisso di colonne —
+   una soglia per ogni formato invecchia al primo schermo nuovo. */
+.griglia-schede {
+  display: grid; gap: var(--sp3);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+/* Lo stemma della squadra. Quadrato con angoli appena smussati, perche gli
+   avatar delle persone sono tondi: dove compaiono insieme, la forma dice
+   subito quale delle due cose si sta guardando. */
+.stemma {
+  display: block; border-radius: 4px; object-fit: contain;
+  background: var(--carta-alt);
+}
+
+/* La scelta dello stemma: anteprima a sinistra, comandi a destra. */
+.stemma-scelta {
+  display: grid; grid-template-columns: 96px minmax(0, 1fr);
+  gap: var(--sp4); align-items: start; margin-top: var(--sp3);
+}
+@media (max-width: 620px) {
+  .stemma-scelta { grid-template-columns: 1fr; justify-items: center; }
+  .stemma-comandi { width: 100%; }
+}
+.stemma-anteprima .stemma { border-radius: 8px; }
+.separatore { border: 0; border-top: 1px solid var(--bordo); margin: var(--sp4) 0; }

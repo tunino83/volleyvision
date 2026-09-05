@@ -90,7 +90,8 @@ function Riga({ m, onApri }: { m: any; onApri: () => void }) {
         <span className="numerico">{data(m.data)}</span>
       </div>
 
-      <Duo casa={m.home.nome} ospite={m.away.nome} />
+      <Duo casa={m.home.nome} ospite={m.away.nome}
+                   squadraCasa={m.home} squadraOspite={m.away} />
 
       <div className="partita-coda">
         <span className="piccolo muto">{m.competition.nome}</span>

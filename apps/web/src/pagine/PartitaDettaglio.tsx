@@ -38,7 +38,8 @@ export default function PartitaDettaglio() {
         <Indietro a="/partite" testo="Tutte le partite" />
         <div className="riga-sp">
           <div>
-            <h1><Duo casa={m.home.nome} ospite={m.away.nome} /></h1>
+            <h1><Duo casa={m.home.nome} ospite={m.away.nome}
+                   squadraCasa={m.home} squadraOspite={m.away} /></h1>
             <p className="muto">{m.competition.nome} · {data(m.data)}{m.citta && ` · ${m.citta}`}</p>
           </div>
           <div className="riga">

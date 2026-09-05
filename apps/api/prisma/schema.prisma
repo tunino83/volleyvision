@@ -187,11 +187,43 @@ model Team {
   stagione  String
   creatoIl  DateTime @default(now())
 
+  /// Stile dello stemma disegnato (`initials`, `shapes`, `rings`, ...).
+  /// Nullo: le iniziali del nome, che ci sono sempre.
+  logoStile String?
+  /// Seme da cui si disegna. Nullo: si deriva dal nome, cosi lo stemma c'e
+  /// comunque ed e sempre lo stesso per quella squadra.
+  logoSeme  String?
+  /// Scelte fatte a mano: stesse regole dell'avatar delle persone, e stesso
+  /// motivo per cui e JSON — le opzioni dipendono dallo stile.
+  logoOpzioniJson String?
+  /// L'immagine caricata, se c'e. Ha la precedenza sullo stemma disegnato.
+  logo      TeamLogo?
+
   giocatori   TeamPlayer[]
   shares      TeamShare[]
   matchesHome Match[] @relation("HomeTeam")
   matchesAway Match[] @relation("AwayTeam")
   @@index([ownerId])
+}
+
+/// Lo stemma caricato di una squadra.
+///
+/// **In tabella separata, e non una colonna su `Team`**, per la stessa
+/// ragione delle fotografie: i byte non devono viaggiare con l'anagrafica.
+/// L'elenco delle squadre finisce in locale su ogni dispositivo, e un elenco
+/// che si porta dietro dieci immagini non e piu un elenco leggero.
+///
+/// Diversamente dalle fotografie, qui **non c'e questione di riservatezza**:
+/// lo stemma di una societa non e il volto di un minorenne. Per questo non
+/// sta dietro nessuna bandiera di funzione.
+model TeamLogo {
+  teamId       String   @id
+  team         Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  dati         Bytes
+  tipo         String   // image/jpeg | image/png | image/webp | image/svg+xml
+  byte         Int
+  /// Serve da versione per la cache del browser: cambia, cambia l'indirizzo.
+  aggiornatoIl DateTime @default(now())
 }
 
 model TeamPlayer {

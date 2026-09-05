@@ -166,6 +166,54 @@ export const TeamInput = z.object({
 });
 export type TeamInput = z.infer<typeof TeamInput>;
 
+/**
+ * LO STEMMA DELLA SQUADRA
+ *
+ * Stessa forma dell'avatar delle persone, **stili diversi**: qui non servono
+ * facce. `initials` e il predefinito perche funziona senza che nessuno scelga
+ * niente — due lettere del nome sono gia un segno riconoscibile, e restano
+ * leggibili a diciotto pixel dove un disegno diventa una macchia.
+ *
+ * Le facce non sono nell'elenco di proposito: uno stemma con la faccia di
+ * qualcuno verrebbe letto come "il giocatore", non "la squadra".
+ */
+export const LOGO_STILI = [
+  "initials", "shapes", "rings", "identicon", "glass", "icons", "bottts",
+] as const;
+export const LogoStile = z.enum(LOGO_STILI);
+export type LogoStile = z.infer<typeof LogoStile>;
+
+export const LogoSquadraInput = z.object({
+  logoStile: LogoStile.nullable(),
+  logoSeme: z.string().trim().min(1).max(64).nullable(),
+  /** Stessa struttura dell'avatar: si convalida la forma, non i valori. */
+  logoOpzioni: AvatarOpzioni.nullable().optional(),
+});
+export type LogoSquadraInput = z.infer<typeof LogoSquadraInput>;
+
+/**
+ * Lo stemma caricato come immagine.
+ *
+ * Piu generoso della fotografia di una persona (300 KB) perche uno stemma
+ * ha spesso poche tinte piatte e bordi netti, dove il PNG serve e il JPEG
+ * sporca. **Niente SVG**: e un documento eseguibile, e servirlo dallo stesso
+ * dominio dell'applicazione significherebbe eseguirlo li dentro.
+ *
+ * Il ridimensionamento lo fa il client, come per le fotografie: questo
+ * limite e la rete di sicurezza, non il meccanismo.
+ */
+export const LOGO_MAX_BYTE = 512 * 1024;
+
+export const FotoSquadraInput = z.object({
+  /** `data:image/png;base64,...` */
+  dataUri: z.string()
+    .regex(/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/,
+           "Formato non riconosciuto: sono ammessi JPEG, PNG e WebP")
+    .refine((v) => (v.length - v.indexOf(",") - 1) * 3 / 4 <= LOGO_MAX_BYTE,
+            `L'immagine supera ${Math.round(LOGO_MAX_BYTE / 1024)} KB`),
+});
+export type FotoSquadraInput = z.infer<typeof FotoSquadraInput>;
+
 export const TeamPlayerInput = z.object({
   numeroMaglia: JerseyNumber,
   cognome: PersonName,

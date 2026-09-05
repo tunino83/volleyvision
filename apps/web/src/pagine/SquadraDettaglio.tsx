@@ -6,6 +6,8 @@ import { Campo, Carta, Indietro, Stato } from "../componenti/Ui";
 import { Avatar, NOME_API, STILI, type Stile } from "../componenti/Avatar";
 import { preparaFoto, byteDiDataUri } from "../componenti/ritaglia";
 import { AvatarPersonalizza } from "../componenti/AvatarPersonalizza";
+import { LogoSquadra } from "../componenti/LogoSquadra";
+import StemmaPersonalizza from "../componenti/StemmaPersonalizza";
 import { useFunzioni } from "../funzioni";
 import { Maglia, MagliaPiena, Persona } from "../componenti/Icone";
 
@@ -70,13 +72,20 @@ export default function SquadraDettaglio() {
       <Indietro a="/squadre" testo="Tutte le squadre" />
 
       <div className="riga-sp">
-        <div>
-          <h1>{q.data?.nome}</h1>
-          <p className="muto" style={{ marginTop: 0 }}>
-            {q.data?.stagione} · {giocatori.length}{" "}
-            {giocatori.length === 1 ? "giocatore" : "giocatori"}
-            {soloLettura && " · sola lettura"}
-          </p>
+        <div className="riga">
+          {q.data && (
+            <LogoSquadra nome={q.data.nome} stile={q.data.logoStile} seme={q.data.logoSeme}
+                         opzioni={q.data.logoOpzioni} teamId={q.data.id} logo={q.data.logo}
+                         d={44} />
+          )}
+          <div>
+            <h1 style={{ margin: 0 }}>{q.data?.nome}</h1>
+            <p className="muto" style={{ marginTop: 0 }}>
+              {q.data?.stagione} · {giocatori.length}{" "}
+              {giocatori.length === 1 ? "giocatore" : "giocatori"}
+              {soloLettura && " · sola lettura"}
+            </p>
+          </div>
         </div>
         {!soloLettura && (
           <button className="primario" onClick={() => { setNuovo(true); setApre(null); }}>
@@ -84,6 +93,10 @@ export default function SquadraDettaglio() {
           </button>
         )}
       </div>
+
+      {/* Solo per chi la possiede: su una squadra condivisa in sola lettura,
+          comandi che il server rifiuterebbe comunque (regola 2b). */}
+      {q.data && !soloLettura && <StemmaPersonalizza squadra={q.data} />}
 
       {senzaPersona > 0 && !soloLettura && (
         <div className="avviso attenzione piccolo">

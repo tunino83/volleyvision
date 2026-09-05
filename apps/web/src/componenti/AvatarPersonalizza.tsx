@@ -74,13 +74,24 @@ const posizione = (k: string) => {
   return i === -1 ? ORDINE.length : i;
 };
 
-export function AvatarPersonalizza({ stile, opzioni, onCambia }: {
+export function AvatarPersonalizza({ stile, opzioni, onCambia, risolviStile }: {
   stile: string | null;
   opzioni: Record<string, string[]>;
   onCambia: (o: Record<string, string[]>) => void;
+  /**
+   * Da nome dello stile a chiave del pacchetto.
+   *
+   * Esiste perche questi comandi servono anche agli **stemmi delle squadre**,
+   * che usano altri stili (`shapes`, `rings`, `initials`). Il meccanismo —
+   * leggere `schema.properties` e costruire i comandi — e identico; cambia
+   * solo dove si va a prendere lo stile, e quello e un parametro.
+   */
+  risolviStile?: (s: string | null) => string;
 }) {
   const proprieta = useMemo(() => {
-    const chiave = MAPPA[stile ?? "personas"] ?? "personas";
+    const chiave = risolviStile
+      ? risolviStile(stile)
+      : MAPPA[stile ?? "personas"] ?? "personas";
     const s = (stili as any)[chiave]?.schema?.properties as
       Record<string, any> | undefined;
     if (!s) return [];
@@ -98,7 +109,7 @@ export function AvatarPersonalizza({ stile, opzioni, onCambia }: {
       .filter((p) => p.valori.length > 1)
       .sort((a, b) => posizione(a.chiave) - posizione(b.chiave)
                       || a.chiave.localeCompare(b.chiave));
-  }, [stile]);
+  }, [stile, risolviStile]);
 
   if (!proprieta.length) {
     return <p className="piccolo muto" style={{ margin: 0 }}>

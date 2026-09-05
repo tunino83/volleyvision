@@ -6,6 +6,35 @@ import { AuditService } from "../common/audit.service";
 import { MailService } from "../common/mail.service";
 import type { TeamInput, TeamRosterInput } from "@vv/schema";
 
+/** Massimo per uno stemma caricato. Vedi `impostaLogo`. */
+const LOGO_MAX_BYTE = 512 * 1024;
+const LOGO_TIPI = ["image/png", "image/jpeg", "image/webp"];
+
+/**
+ * Le tre cose che il client deve sapere sullo stemma, e nessun byte.
+ *
+ * Lo stemma disegnato e due stringhe; quello caricato e **un numero**, la sua
+ * versione. Lasciarlo uscire come oggetto (`{ aggiornatoIl }`) lo renderebbe
+ * comunque "vero" per il client, che lo userebbe come versione
+ * nell'indirizzo: funzionerebbe per caso, e lo stemma aggiornato non
+ * comparirebbe mai perche la chiave della copia locale non cambierebbe. E lo
+ * stesso inciampo gia visto con le fotografie.
+ */
+function stemma(t: { logoStile?: string | null; logoSeme?: string | null;
+                     logoOpzioniJson?: string | null;
+                     logo?: { aggiornatoIl: Date } | null } | null) {
+  if (!t) return { logoStile: null, logoSeme: null, logoOpzioni: null, logo: null };
+  return {
+    logoStile: t.logoStile ?? null,
+    logoSeme: t.logoSeme ?? null,
+    logoOpzioni: (() => {
+      if (!t.logoOpzioniJson) return null;
+      try { return JSON.parse(t.logoOpzioniJson); } catch { return null; }
+    })(),
+    logo: t.logo ? t.logo.aggiornatoIl.getTime() : null,
+  };
+}
+
 @Injectable()
 export class TeamsService {
   constructor(private prisma: PrismaService, private access: AccessService,
@@ -16,6 +45,9 @@ export class TeamsService {
     const teams = await this.prisma.team.findMany({
       where: { id: { in: ids } },
       include: { owner: { select: { id: true, nome: true, cognome: true } },
+                 // Solo la data dello stemma, mai i byte: l'elenco delle
+                 // squadre finisce in locale su ogni dispositivo.
+                 logo: { select: { aggiornatoIl: true } },
                  _count: { select: { giocatori: true, matchesHome: true, matchesAway: true } } },
       orderBy: [{ stagione: "desc" }, { nome: "asc" }],
     });
@@ -25,6 +57,7 @@ export class TeamsService {
       partite: t._count.matchesHome + t._count.matchesAway,
       proprietario: t.ownerId === userId,
       proprietarioNome: `${t.owner.nome} ${t.owner.cognome}`,
+      ...stemma(t),
     }));
   }
 
@@ -64,12 +97,99 @@ export class TeamsService {
       },
     }));
 
-    return { id: team.id, nome: team.nome, stagione: team.stagione, proprietario, giocatori };
+    const conLogo = await this.prisma.team.findUnique({
+      where: { id }, select: { logoStile: true, logoSeme: true, logoOpzioniJson: true,
+                               logo: { select: { aggiornatoIl: true } } } });
+
+    return { id: team.id, nome: team.nome, stagione: team.stagione, proprietario, giocatori,
+             ...stemma(conLogo) };
   }
 
   async aggiorna(userId: string, id: string, dto: TeamInput) {
     await this.access.team(userId, id, true);
     return this.prisma.team.update({ where: { id }, data: dto });
+  }
+
+  /**
+   * Lo stemma disegnato: stile, seme, scelte a mano. Nessun file.
+   *
+   * Il seme predefinito e il nome della squadra, quindi lo stemma **c'e
+   * comunque** e non cambia da solo: prima ancora che qualcuno lo scelga,
+   * ogni squadra ha gia il suo, sempre lo stesso.
+   */
+  async impostaLogoDisegnato(userId: string, id: string,
+                             d: { logoStile: string | null; logoSeme: string | null;
+                                  logoOpzioni?: Record<string, string[]> | null }) {
+    await this.access.team(userId, id, true);
+    const t = await this.prisma.team.update({
+      where: { id },
+      data: {
+        logoStile: d.logoStile, logoSeme: d.logoSeme,
+        // `undefined` lascia com'e, `null` cancella: chi manda solo stile e
+        // seme non perde le scelte fatte a mano.
+        ...(d.logoOpzioni === undefined ? {} : {
+          logoOpzioniJson: d.logoOpzioni ? JSON.stringify(d.logoOpzioni) : null,
+        }),
+      },
+      include: { logo: { select: { aggiornatoIl: true } } },
+    });
+    return { id: t.id, ...stemma(t) };
+  }
+
+  /**
+   * Lo stemma caricato. Arriva gia ridotto dal client.
+   *
+   * **Convalidato comunque.** Il client ridimensiona, ma il client e solo il
+   * chiamante piu probabile, non l'unico: mezzo megabyte e un elenco chiuso
+   * di formati sono il confine oltre il quale questa rotta non e piu un
+   * caricatore di stemmi ma un deposito di file. Niente SVG: e un documento
+   * eseguibile, e servirlo dallo stesso dominio dell'applicazione
+   * significherebbe eseguirlo li dentro.
+   *
+   * Ha la precedenza sullo stemma disegnato ma non lo cancella: chi la toglie
+   * ritrova quello di prima invece di un riquadro vuoto.
+   */
+  async impostaLogo(userId: string, id: string, dataUri: string) {
+    await this.access.team(userId, id, true);
+
+    const virgola = dataUri.indexOf(",");
+    const puntoevirgola = dataUri.indexOf(";");
+    if (!dataUri.startsWith("data:") || virgola < 0 || puntoevirgola < 0) {
+      throw new BadRequestException({ code: "VALIDAZIONE",
+        message: "Immagine non riconosciuta" });
+    }
+    const tipo = dataUri.slice(5, puntoevirgola);
+    if (!LOGO_TIPI.includes(tipo)) {
+      throw new BadRequestException({ code: "FORMATO_NON_AMMESSO",
+        message: `Formati ammessi: ${LOGO_TIPI.join(", ")}` });
+    }
+    const dati = Buffer.from(dataUri.slice(virgola + 1), "base64");
+    if (dati.length === 0 || dati.length > LOGO_MAX_BYTE) {
+      throw new BadRequestException({ code: "TROPPO_GRANDE",
+        message: `Lo stemma non puo superare ${Math.round(LOGO_MAX_BYTE / 1024)} KB` });
+    }
+
+    const l = await this.prisma.teamLogo.upsert({
+      where: { teamId: id },
+      create: { teamId: id, dati, tipo, byte: dati.length },
+      update: { dati, tipo, byte: dati.length, aggiornatoIl: new Date() },
+    });
+    await this.audit.log(userId, "stemma_squadra", "team", id, `${l.byte} byte, ${tipo}`);
+    return { id, logo: l.aggiornatoIl.getTime(), byte: l.byte };
+  }
+
+  /** I byte, per la rotta che li serve. Nullo se non c'e. */
+  async logo(userId: string, id: string) {
+    await this.access.team(userId, id);
+    return this.prisma.teamLogo.findUnique({ where: { teamId: id } });
+  }
+
+  async rimuoviLogo(userId: string, id: string) {
+    await this.access.team(userId, id, true);
+    // `deleteMany` e non `delete`: togliere uno stemma che non c'e non e un
+    // errore, e chiedere di non premere due volte sarebbe assurdo.
+    await this.prisma.teamLogo.deleteMany({ where: { teamId: id } });
+    return { id, logo: null };
   }
 
   /**
