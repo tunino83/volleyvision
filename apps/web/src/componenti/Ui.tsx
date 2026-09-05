@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { LogoSquadra } from "./LogoSquadra";
+import { Stemma, type SquadraConStemma } from "./LogoSquadra";
 import type { CSSProperties, ReactNode } from "react";
 
 export function Carta({ children, onClick, className = "", style }: {
@@ -127,18 +127,12 @@ export const Squadre = ({ casa, ospite, parziali, squadraCasa, squadraOspite }: 
    * obbligatorie avrebbe costretto a inventare stemmi dove non c'e la
    * squadra, e uno stemma inventato e peggio di nessuno stemma.
    */
-  squadraCasa?: { id: string; nome: string; logoStile?: string | null;
-                  logoSeme?: string | null; logoOpzioni?: Record<string, string[]> | null;
-                  logo?: number | null } | null;
-  squadraOspite?: typeof squadraCasa;
+  squadraCasa?: SquadraConStemma | null;
+  squadraOspite?: SquadraConStemma | null;
 }) => (
   <span className="incontro">
     <span className="lato">
-      {squadraCasa
-        ? <LogoSquadra nome={squadraCasa.nome} stile={squadraCasa.logoStile}
-                       seme={squadraCasa.logoSeme} opzioni={squadraCasa.logoOpzioni}
-                       teamId={squadraCasa.id} logo={squadraCasa.logo} d={22} />
-        : <span className="fascia casa" />}
+      {squadraCasa ? <Stemma squadra={squadraCasa} /> : <span className="fascia casa" />}
       <span className="nome">{casa}</span>
     </span>
     <span className="parziali">
@@ -147,11 +141,7 @@ export const Squadre = ({ casa, ospite, parziali, squadraCasa, squadraOspite }: 
         : "vs"}
     </span>
     <span className="lato destra">
-      {squadraOspite
-        ? <LogoSquadra nome={squadraOspite.nome} stile={squadraOspite.logoStile}
-                       seme={squadraOspite.logoSeme} opzioni={squadraOspite.logoOpzioni}
-                       teamId={squadraOspite.id} logo={squadraOspite.logo} d={22} />
-        : <span className="fascia ospite" />}
+      {squadraOspite ? <Stemma squadra={squadraOspite} /> : <span className="fascia ospite" />}
       <span className="nome">{ospite}</span>
     </span>
   </span>

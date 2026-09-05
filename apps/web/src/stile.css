@@ -1287,7 +1287,9 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
    modulo — si sceglie senza piu vedere cosa si stava compilando. */
 .scelte { display: flex; flex-wrap: wrap; gap: 6px; }
 .scelta {
-  display: inline-flex; align-items: baseline; gap: 6px;
+  /* `center` e non `baseline`: la pastiglia di una squadra contiene anche lo
+     stemma, e su una linea di base un'immagine si appoggia storta. */
+  display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 12px; cursor: pointer;
   background: var(--carta-alt); color: var(--testo);
   border: 1px solid var(--bordo); border-radius: 999px;
@@ -1327,7 +1329,7 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
   align-items: center; gap: var(--sp3);
   width: 100%; padding: 11px var(--sp3);
   background: transparent; border: 0; border-bottom: 1px solid var(--bordo);
-  color: var(--inchiostro); text-align: left; cursor: pointer; font: inherit;
+  color: var(--testo); text-align: left; cursor: pointer; font: inherit;
 }
 .riga-squadra:last-child { border-bottom: 0; }
 .riga-squadra:hover { background: var(--carta-alt); }

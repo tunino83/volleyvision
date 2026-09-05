@@ -45,6 +45,26 @@ stata giocata quando la si carica. Serve a sapere quante formazioni chiedere.
 Resta nullo finche non lo si dichiara, e nessuna formazione oltre quel numero
 sopravvive a una riduzione.
 
+**Le immagini stanno in tabelle a se** — `PersonaFoto`, `TeamLogo` — e non
+come colonne su `Person` e `Team`. Il motivo non e l'ordine ma il peso:
+anagrafiche e squadre finiscono **in locale su ogni dispositivo** (regola 6d),
+e un elenco che si porta dietro le immagini non e piu leggero. Verso il client
+un'immagine caricata si appiattisce a **un numero**, la sua versione: mai i
+byte, e mai un oggetto — un oggetto verrebbe usato come versione
+nell'indirizzo, funzionerebbe per caso, e l'immagine aggiornata non
+comparirebbe mai perche la chiave della copia locale non cambierebbe.
+
+**Lo stemma della squadra ha due forme, e non si escludono.** `logoStile` /
+`logoSeme` / `logoOpzioniJson` descrivono un disegno generato; `TeamLogo`
+tiene un'immagine caricata. La seconda ha la precedenza ma non cancella la
+prima: chi toglie l'immagine ritrova il disegno, non un riquadro vuoto. Il
+seme predefinito e il nome della squadra, quindi **lo stemma esiste sempre**,
+anche prima che qualcuno lo scelga, e non cambia da solo.
+
+A differenza delle fotografie delle persone lo stemma **non sta dietro una
+bandiera di funzione**: lo stemma di una societa non e il volto di un
+minorenne, e la ragione per cui `FOTO_PERSONE` e spenta non si applica.
+
 **I byte sono `BigInt`.** Un video da 5 GB non sta in un intero a 32 bit. La
 serializzazione a numero avviene in `main.ts`: sicura fino a 9 PB.
 

@@ -4,10 +4,18 @@ import { PrismaService } from "../common/prisma.service";
 import { AccessService } from "../common/access.service";
 import { AuditService } from "../common/audit.service";
 import { MailService } from "../common/mail.service";
+import { LOGO_MAX_BYTE } from "@vv/schema";
 import type { TeamInput, TeamRosterInput } from "@vv/schema";
 
-/** Massimo per uno stemma caricato. Vedi `impostaLogo`. */
-const LOGO_MAX_BYTE = 512 * 1024;
+/*
+ * Il limite viene da `@vv/schema`, non da una costante locale.
+ *
+ * Scritto due volte diverge, e diverge in silenzio: il client accetterebbe
+ * un'immagine che il server rifiuta, o peggio il contrario. E la regola 3 —
+ * una fonte sola per tipi e convalide — e il caso in cui piu facilmente si
+ * dimentica di applicarla, perche un numero sembra troppo piccolo per
+ * meritare un import.
+ */
 const LOGO_TIPI = ["image/png", "image/jpeg", "image/webp"];
 
 /**

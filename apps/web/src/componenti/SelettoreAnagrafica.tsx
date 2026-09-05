@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
 import { Campo } from "./Ui";
+import { Stemma, type SquadraConStemma } from "./LogoSquadra";
 
 /**
  * Scelta di una squadra o di un campionato, con creazione al volo.
@@ -12,7 +13,9 @@ import { Campo } from "./Ui";
  * quanto ha gia scritto. Si crea sul posto e si seleziona.
  */
 
-interface Voce { id: string; nome: string; stagione?: string; proprietario?: boolean }
+interface Voce extends Partial<SquadraConStemma> {
+  id: string; nome: string; stagione?: string; proprietario?: boolean;
+}
 
 export function SelettoreAnagrafica({
   etichetta, risorsa, chiaveCache, voci, valore, escludi, errore, onCambia,
@@ -105,6 +108,13 @@ export function SelettoreAnagrafica({
                   className={`scelta ${valore === v.id ? "scelta-attiva" : ""}`}
                   aria-pressed={valore === v.id}
                   onClick={() => onCambia(valore === v.id ? "" : v.id)}>
+            {/*
+              * Lo stemma solo per le squadre, e lo decide il selettore
+              * guardando `risorsa`: passarlo dall'esterno sarebbe una cosa
+              * in piu da ricordare a ogni chiamata, e prima o poi qualcuno
+              * se ne dimenticherebbe. I campionati non hanno stemma.
+              */}
+            {risorsa === "/teams" && <Stemma squadra={v as SquadraConStemma} d={20} />}
             <span className="scelta-nome">{v.nome}</span>
             {v.stagione && <span className="scelta-nota">{v.stagione}</span>}
           </button>

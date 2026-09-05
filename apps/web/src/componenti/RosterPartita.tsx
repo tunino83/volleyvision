@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Stemma } from "./LogoSquadra";
 import { Link } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
@@ -55,8 +56,11 @@ function Squadra({ lato, partita, bloccato, onRicarica }: {
   return (
     <Carta>
       <div className="riga-sp">
-        <span className="grassetto">
-          <span className={`punto ${lato === "h" ? "casa" : "ospite"}`} />{" "}
+        <span className="grassetto riga">
+          {/* Il pallino colorato resta: dice quale lato del campo, e lo
+              stemma non lo sa. Sono due informazioni diverse. */}
+          <span className={`punto ${lato === "h" ? "casa" : "ospite"}`} />
+          <Stemma squadra={lato === "h" ? partita.home : partita.away} />
           {lato === "h" ? partita.home.nome : partita.away.nome}
         </span>
         {!bloccato && (

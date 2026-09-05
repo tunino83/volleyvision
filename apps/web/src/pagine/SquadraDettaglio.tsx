@@ -6,7 +6,7 @@ import { Campo, Carta, Indietro, Stato } from "../componenti/Ui";
 import { Avatar, NOME_API, STILI, type Stile } from "../componenti/Avatar";
 import { preparaFoto, byteDiDataUri } from "../componenti/ritaglia";
 import { AvatarPersonalizza } from "../componenti/AvatarPersonalizza";
-import { LogoSquadra } from "../componenti/LogoSquadra";
+import { Stemma } from "../componenti/LogoSquadra";
 import StemmaPersonalizza from "../componenti/StemmaPersonalizza";
 import { useFunzioni } from "../funzioni";
 import { Maglia, MagliaPiena, Persona } from "../componenti/Icone";
@@ -74,9 +74,7 @@ export default function SquadraDettaglio() {
       <div className="riga-sp">
         <div className="riga">
           {q.data && (
-            <LogoSquadra nome={q.data.nome} stile={q.data.logoStile} seme={q.data.logoSeme}
-                         opzioni={q.data.logoOpzioni} teamId={q.data.id} logo={q.data.logo}
-                         d={44} />
+            <Stemma squadra={q.data} d={44} />
           )}
           <div>
             <h1 style={{ margin: 0 }}>{q.data?.nome}</h1>

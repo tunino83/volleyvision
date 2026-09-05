@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Stemma } from "./LogoSquadra";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
 import { Campo, Carta } from "./Ui";
@@ -166,8 +167,9 @@ function SoloLettura({ partita, numeroSet }: { partita: any; numeroSet: number }
           };
           return (
             <Carta key={lato}>
-              <div className="grassetto" style={{ marginBottom: 10 }}>
-                <span className={`punto ${lato === "h" ? "casa" : "ospite"}`} />{" "}
+              <div className="grassetto riga" style={{ marginBottom: 10 }}>
+                <span className={`punto ${lato === "h" ? "casa" : "ospite"}`} />
+                <Stemma squadra={lato === "h" ? partita.home : partita.away} />
                 {lato === "h" ? partita.home.nome : partita.away.nome}
               </div>
               {!f ? <p className="piccolo muto">Formazione non registrata per questo set.</p> : (

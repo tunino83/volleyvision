@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Pillola, Squadre as Duo, Stato, data } from "../componenti/Ui";
 import { Righe } from "../componenti/Grafici";
-import { LogoSquadra } from "../componenti/LogoSquadra";
+import { Stemma } from "../componenti/LogoSquadra";
 
 /**
  * La prima schermata: cosa e successo e cosa c'e da fare.
@@ -103,8 +103,7 @@ export default function Home() {
             <button key={t.id} className="riga-squadra" onClick={() => nav(`/squadre/${t.id}`)}>
               {/* Lo stemma al posto dell'icona generica: erano tutte uguali,
                   e un elenco di icone identiche non aiuta a trovare niente. */}
-              <LogoSquadra nome={t.nome} stile={t.logoStile} seme={t.logoSeme}
-                           opzioni={t.logoOpzioni} teamId={t.id} logo={t.logo} d={22} />
+              <Stemma squadra={t} />
               <span className="riga-squadra-nome">
                 {t.nome}
                 {!t.proprietario && <em className="piccolo muto"> · condivisa</em>}

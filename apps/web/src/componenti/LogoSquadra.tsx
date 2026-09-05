@@ -63,6 +63,35 @@ export function LogoSquadra({ nome, stile, seme, opzioni, teamId, logo, d = 28, 
   );
 }
 
+/**
+ * La squadra come arriva dall'API: un oggetto solo, invece di cinque
+ * proprieta ripetute a ogni chiamata.
+ *
+ * Nasce dopo il terzo punto in cui si scriveva la stessa fila di
+ * `stile={t.logoStile} seme={t.logoSeme} opzioni={t.logoOpzioni} ...`. Il
+ * giorno che quei campi cambiano nome, cambiano in un posto solo.
+ *
+ * Accetta `null` perche qualche schermata ha solo i nomi — le formazioni
+ * salvate dentro una partita ne conservano una copia — e li non c'e squadra
+ * da cui prendere lo stemma. Meglio niente che uno stemma inventato.
+ */
+export interface SquadraConStemma {
+  id: string; nome: string;
+  logoStile?: string | null;
+  logoSeme?: string | null;
+  logoOpzioni?: Record<string, string[]> | null;
+  logo?: number | null;
+}
+
+export function Stemma({ squadra, d = 22, className }: {
+  squadra?: SquadraConStemma | null; d?: number; className?: string;
+}) {
+  if (!squadra) return null;
+  return <LogoSquadra nome={squadra.nome} stile={squadra.logoStile} seme={squadra.logoSeme}
+                      opzioni={squadra.logoOpzioni} teamId={squadra.id} logo={squadra.logo}
+                      d={d} className={className} />;
+}
+
 /** Il solo disegno, senza l'immagine caricata: serve all'anteprima mentre si sceglie. */
 export function disegna(nome: string, stile?: string | null, seme?: string | null,
                         opzioni?: Record<string, string[]> | null, d = 64) {

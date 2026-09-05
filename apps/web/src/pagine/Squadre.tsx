@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LogoSquadra } from "../componenti/LogoSquadra";
+import { Stemma } from "../componenti/LogoSquadra";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
@@ -54,8 +54,7 @@ export default function Squadre() {
             {q.data?.map((t) => (
               <Carta key={t.id} onClick={() => nav(`/squadre/${t.id}`)}>
                 <div className="riga">
-                  <LogoSquadra nome={t.nome} stile={t.logoStile} seme={t.logoSeme}
-                               opzioni={t.logoOpzioni} teamId={t.id} logo={t.logo} d={34} />
+                  <Stemma squadra={t} d={34} />
                   <div>
                     <div className="grassetto">{t.nome}</div>
                     <div className="piccolo muto">{t.stagione}</div>
