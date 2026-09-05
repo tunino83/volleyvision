@@ -216,6 +216,67 @@ public class VideoNativoPlugin extends Plugin {
     return r;
   }
 
+  // ------------------------------------------------------- salvare un file
+
+  /**
+   * Consegna all'utente un file generato dall'applicazione web.
+   *
+   * <p>Serve perche nel WebView <b>il meccanismo del browser non
+   * funziona</b>: un `<a download>` che punta a un indirizzo temporaneo qui
+   * non salva niente e non dice perche. Senza questo metodo l'esportazione
+   * di un tabellino esisterebbe sul sito e sarebbe morta dentro l'app.
+   *
+   * <p>Si passa dal foglio di condivisione invece di scrivere in Download:
+   * scrivere nella cartella pubblica su Android moderno richiede altri
+   * permessi, e soprattutto quello che si vuole fare con un tabellino e
+   * quasi sempre <b>mandarlo a qualcuno</b>, non archiviarlo. Il foglio di
+   * condivisione lascia comunque "Salva su Drive" e "File".
+   */
+  @PluginMethod public void salvaFile(PluginCall call) {
+    final String nome = call.getString("nome");
+    final String base64 = call.getString("base64");
+    final String tipo = call.getString("mime", "application/octet-stream");
+    if (nome == null || base64 == null) {
+      call.reject("Mancano nome o contenuto", "DATI_MANCANTI");
+      return;
+    }
+
+    try {
+      // Nella cache e non nella cartella dei documenti: e una copia di
+      // passaggio, e il sistema puo buttarla quando vuole. Cio che conta e
+      // che sopravviva il tempo della condivisione.
+      java.io.File cartella = new java.io.File(getContext().getCacheDir(), "esportazioni");
+      if (!cartella.exists() && !cartella.mkdirs()) {
+        call.reject("Non e stato possibile creare la cartella", "IO");
+        return;
+      }
+      java.io.File f = new java.io.File(cartella, nome);
+      byte[] dati = android.util.Base64.decode(base64, android.util.Base64.DEFAULT);
+      try (java.io.FileOutputStream out = new java.io.FileOutputStream(f)) { out.write(dati); }
+
+      Uri uri = androidx.core.content.FileProvider.getUriForFile(
+          getContext(), getContext().getPackageName() + ".fileprovider", f);
+
+      Intent invia = new Intent(Intent.ACTION_SEND);
+      invia.setType(tipo);
+      invia.putExtra(Intent.EXTRA_STREAM, uri);
+      invia.putExtra(Intent.EXTRA_SUBJECT, nome);
+      // Senza questo permesso l'applicazione che riceve il file vede un
+      // indirizzo che non puo aprire.
+      invia.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+      Intent scelta = Intent.createChooser(invia, "Condividi " + nome);
+      scelta.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      getContext().startActivity(scelta);
+
+      JSObject r = new JSObject();
+      r.put("salvato", true);
+      call.resolve(r);
+    } catch (Exception e) {
+      call.reject("Salvataggio non riuscito: " + e.getMessage(), "IO");
+    }
+  }
+
   // ------------------------------------------------------------- utilita
 
   private JSObject statoCorrente() {

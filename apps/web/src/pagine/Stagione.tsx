@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Stato, data } from "../componenti/Ui";
 import { Statistiche as IcoStat } from "../componenti/Icone";
+import Esporta from "../componenti/Esporta";
+import type { Colonna } from "../esporta";
 
 /**
  * STATISTICHE SU PIU PARTITE.
@@ -72,6 +74,26 @@ export default function Stagione() {
     const va = a[ordine] ?? -1, vb = b[ordine] ?? -1;
     return (vb as number) - (va as number);
   });
+
+  /*
+   * Le colonne del file: le stesse della tabella, con davanti chi e.
+   *
+   * "Squadre" e "Maglie" sono elenchi a schermo e diventano testo separato da
+   * virgole nel file: una persona puo aver giocato in due squadre e con tre
+   * numeri diversi, ed e proprio quello che le statistiche di stagione
+   * servono a vedere.
+   */
+  const colonneEsportate: Colonna<Voce>[] = [
+    { chiave: "cognome", intestazione: "Cognome" },
+    { chiave: "nome", intestazione: "Nome" },
+    { chiave: "squadre", intestazione: "Squadre", valore: (v) => v.squadre.join(", ") },
+    { chiave: "maglie", intestazione: "Maglie", valore: (v) => v.maglie.join(", ") },
+    { chiave: "partite", intestazione: "Partite" },
+    ...COLONNE.map((c) => ({
+      chiave: c.chiave as string,
+      intestazione: c.gruppo ? `${c.gruppo} ${c.testo}` : c.testo,
+    })),
+  ];
 
   return (
     <>
@@ -153,6 +175,22 @@ export default function Stagione() {
 
           {voci.length > 0 && (
             <Carta>
+              {/*
+                * L'esportazione porta con se **l'ordinamento scelto e i
+                * filtri attivi**: il file deve corrispondere a cio che si sta
+                * guardando, o chi lo apre trova righe che a schermo non
+                * c'erano. Il nome del file dice l'insieme, cosi due
+                * esportazioni con filtri diversi non si confondono.
+                */}
+              <div className="riga-sp" style={{ marginBottom: "var(--sp3)" }}>
+                <span className="etichetta">
+                  Tabellino di stagione · {d.insieme.partiteConsiderate}{" "}
+                  {d.insieme.partiteConsiderate === 1 ? "partita" : "partite"}
+                </span>
+                <Esporta colonne={colonneEsportate} righe={voci} foglio="Stagione"
+                         nome={`statistiche stagione ${d.insieme.partiteConsiderate} partite`} />
+              </div>
+
               <div className="tabella-scorrevole">
                 <table className="tabellino">
                   <thead>

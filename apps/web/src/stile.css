@@ -1478,3 +1478,7 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
      filtri veri. */
   .filtri-nota { display: none; }
 }
+
+/* I comandi di esportazione accanto a una tabella: presenti ma defilati.
+   Non sono l'azione principale della schermata — leggerla lo e. */
+.esporta { gap: var(--sp2); flex-wrap: nowrap; }

@@ -48,6 +48,7 @@ interface VideoNativo {
   annullaCaricamento(): Promise<void>;
   statoCaricamento(): Promise<StatoCaricamentoNativo>;
   chiediNotifiche(): Promise<{ concesso: boolean }>;
+  salvaFile(o: { nome: string; mime: string; base64: string }): Promise<{ salvato: boolean }>;
   addListener(evento: "caricamento",
               f: (s: StatoCaricamentoNativo) => void): Promise<{ remove(): Promise<void> }>;
 }
@@ -77,6 +78,45 @@ export async function capacitaNative() {
     capacita = { registrazione: false, caricamentoInSecondoPiano: false };
   }
   return capacita;
+}
+
+/**
+ * Consegna un file all'utente, nel modo giusto per dove si sta girando.
+ *
+ * Nel browser un collegamento con `download`. Nell'app Android **non
+ * funziona**: nel WebView quel meccanismo non salva nulla e non dice perche.
+ * Li si passa dal foglio di condivisione, che e anche quello che si vuole
+ * fare con un tabellino — mandarlo a qualcuno.
+ *
+ * Sta qui e non in un componente perche e esattamente cio che il livello di
+ * piattaforma deve nascondere (regola 1): chi esporta chiede "consegna questo
+ * file", non "sei su Android?".
+ */
+export async function consegnaFile(blob: Blob, nome: string) {
+  if (nativoPresente()) {
+    const base64 = await new Promise<string>((ok, ko) => {
+      const l = new FileReader();
+      // `readAsDataURL` da "data:tipo;base64,XXXX": al ponte serve solo la
+      // coda, e passare l'intestazione farebbe scrivere byte sbagliati.
+      l.onload = () => ok(String(l.result).split(",")[1] ?? "");
+      l.onerror = () => ko(new Error("Non e stato possibile leggere il file."));
+      l.readAsDataURL(blob);
+    });
+    await Nativo.salvaFile({ nome, mime: blob.type || "application/octet-stream", base64 });
+    return;
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Non subito: revocare l'indirizzo prima che il browser abbia cominciato a
+  // scaricare annulla il salvataggio, e succede solo su alcuni browser — cioe
+  // e il tipo di difetto che non si riproduce su quello di chi sviluppa.
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
 
 export const registraPartita = () => Nativo.registra();

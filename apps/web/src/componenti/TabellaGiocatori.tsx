@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Stato } from "./Ui";
+import Esporta from "./Esporta";
+import type { Colonna } from "../esporta";
 
 /**
  * Il tabellino: una riga per giocatore.
@@ -87,6 +89,31 @@ export default function TabellaGiocatori({ matchId, set, roster, onApriEventi }:
         </span>;
   };
 
+  /*
+   * Le colonne del file esportato.
+   *
+   * Le stesse della tabella, **piu maglia e nome**: a schermo il nome sta
+   * nella colonna di sinistra e il numero e nell'intestazione della riga; in
+   * un foglio di calcolo servono come dati, o le righe sono anonime.
+   *
+   * L'intestazione unisce gruppo e voce ("Attacco Pt") perche in un CSV non
+   * esiste la doppia riga di intestazione che c'e a schermo, e quindici
+   * colonne chiamate "Pt", "Tot", "Err" non si distinguono.
+   */
+  const nomeDi = (v: Voce) => {
+    const g = roster.find((r) => r.lato === v.team && r.numeroMaglia === v.jersey);
+    return g ? `${g.cognome} ${g.nome}`.trim() : "";
+  };
+
+  const colonneEsportate: Colonna<Voce>[] = [
+    { chiave: "jersey", intestazione: "Maglia" },
+    { chiave: "giocatore", intestazione: "Giocatore", valore: nomeDi },
+    ...COLONNE.map((c) => ({
+      chiave: c.chiave as string,
+      intestazione: c.gruppo ? `${c.gruppo} ${c.testo}` : c.testo,
+    })),
+  ];
+
   return (
     <Stato caricamento={q.isLoading} errore={q.error}>
       {d && <>
@@ -99,7 +126,20 @@ export default function TabellaGiocatori({ matchId, set, roster, onApriEventi }:
               </button>
             ))}
           </div>
-          <span className="piccolo muto">tocca un numero per vedere le azioni</span>
+          <div className="riga">
+            {/*
+              * Si esporta **quello che si sta guardando**: il lato scelto e
+              * il set scelto, non tutto. Un file che contiene piu di quanto
+              * mostra la schermata e una sorpresa, e chi lo apre non ha modo
+              * di sapere che l'insieme e diverso.
+              */}
+            <Esporta
+              colonne={colonneEsportate}
+              righe={voci}
+              nome={`tabellino ${lato === "h" ? d.squadre.h : d.squadre.a}${set ? ` set ${set}` : ""}`}
+              foglio={set ? `Set ${set}` : "Partita"} />
+            <span className="piccolo muto">tocca un numero per vedere le azioni</span>
+          </div>
         </div>
 
         {/*
