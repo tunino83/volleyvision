@@ -1439,3 +1439,42 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
   background: var(--carta-alt);
   border: 1px solid var(--bordo); border-radius: var(--r);
 }
+
+/* --------------------------------------------- testata e filtri di elenco */
+
+/* Titolo sopra, comandi sotto: e l'unico modo che regge con piu di un
+   comando. Con .riga-sp (titolo a sinistra, pulsanti a destra) due
+   pulsanti a 375 px non ci stanno, e finiscono addosso al titolo. */
+.testa-pagina { display: grid; gap: var(--sp3); margin-bottom: var(--sp4); }
+.testa-pagina h1 { margin: 0; }
+
+/* I comandi si dividono la larghezza in parti uguali: cosi non si accavallano
+   mai, qualunque cosa ci sia scritto sopra. minmax(0, 1fr) e non 1fr,
+   altrimenti un'etichetta lunga allarga la colonna oltre lo schermo. */
+.azioni-pagina {
+  display: grid; gap: var(--sp2);
+  grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+}
+.azioni-pagina button { justify-content: center; width: 100%; }
+
+.filtri { display: grid; gap: var(--sp2); margin-bottom: var(--sp5); }
+.filtri-nota { align-self: center; }
+
+/* Da tablet in su c'e spazio: titolo e comandi tornano in linea, e i filtri
+   in fila. Sotto, ognuno la sua riga. */
+@media (min-width: 700px) {
+  .testa-pagina {
+    grid-template-columns: 1fr auto; align-items: center;
+  }
+  .azioni-pagina { grid-auto-columns: auto; }
+  .azioni-pagina button { width: auto; }
+  .filtri {
+    grid-template-columns: minmax(0, 240px) minmax(0, 200px) 1fr;
+    align-items: center;
+  }
+}
+@media (max-width: 699px) {
+  /* Un dato di contorno, non un comando: nello stretto la riga serve ai
+     filtri veri. */
+  .filtri-nota { display: none; }
+}

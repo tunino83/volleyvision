@@ -10,6 +10,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.StatFs;
 import android.util.Log;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -18,8 +19,11 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraControl;
 import androidx.camera.core.CameraSelector;
 import androidx.camera.core.Preview;
+import androidx.camera.core.ZoomState;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.video.FallbackStrategy;
 import androidx.camera.video.FileOutputOptions;
@@ -82,24 +86,48 @@ public class RegistrazioneAttivita extends AppCompatActivity {
   private TextView tempo;
   private TextView spazio;
   private TextView avviso;
+  private MiraCampo mira;
   private Button registra;
   private Button annulla;
+  private Button pausa;
+  private Button miraVisibile;
 
   private VideoCapture<Recorder> cattura;
   private Recording inCorso;
   private File file;
   private long avvioMs;
+  private boolean inPausa;
+
+  /**
+   * Il tempo gia registrato prima dell'ultima pausa.
+   *
+   * <p>Serve perche il cronometro deve dire **quanto video c'e**, non quanto
+   * tempo e passato da quando si e premuto Registra. Con una pausa di dieci
+   * minuti fra due set, le due cose divergono di dieci minuti — e chi guarda
+   * lo schermo per sapere se ha ripreso il secondo set intero leggerebbe un
+   * numero che non corrisponde a niente.
+   */
+  private long msPrimaDellaPausa;
+
+  private CameraControl comandi;
+  private ZoomState zoom;
 
   private final Handler orologio = new Handler(Looper.getMainLooper());
   private final Runnable tic = new Runnable() {
     @Override public void run() {
       if (inCorso == null) return;
-      long s = (System.currentTimeMillis() - avvioMs) / 1000;
-      tempo.setText(String.format(Locale.ITALY, "%02d:%02d:%02d", s / 3600, (s / 60) % 60, s % 60));
+      long s = registratoMs() / 1000;
+      tempo.setText(String.format(Locale.ITALY, "%02d:%02d:%02d%s",
+          s / 3600, (s / 60) % 60, s % 60, inPausa ? "  IN PAUSA" : ""));
       aggiornaSpazio();
       orologio.postDelayed(this, 1000);
     }
   };
+
+  /** Millisecondi di video effettivamente registrati, pause escluse. */
+  private long registratoMs() {
+    return msPrimaDellaPausa + (inPausa ? 0 : System.currentTimeMillis() - avvioMs);
+  }
 
   @Override protected void onCreate(@Nullable Bundle stato) {
     super.onCreate(stato);
@@ -109,8 +137,11 @@ public class RegistrazioneAttivita extends AppCompatActivity {
     tempo = findViewById(R.id.tempo);
     spazio = findViewById(R.id.spazio);
     avviso = findViewById(R.id.avviso);
+    mira = findViewById(R.id.mira);
     registra = findViewById(R.id.registra);
     annulla = findViewById(R.id.annulla);
+    pausa = findViewById(R.id.pausa);
+    miraVisibile = findViewById(R.id.mira_visibile);
 
     // Lo schermo resta acceso per tutta la registrazione. Senza, si spegne
     // dopo trenta secondi e con lui, su molti telefoni, se ne va l'anteprima:
@@ -123,6 +154,14 @@ public class RegistrazioneAttivita extends AppCompatActivity {
       // mezz'ora di partita per un tocco sbagliato non e un'opzione.
       if (inCorso != null) ferma(); else chiudi(null);
     });
+    pausa.setOnClickListener(v -> alternaPausa());
+    miraVisibile.setOnClickListener(v -> {
+      boolean accesa = mira.getVisibility() == View.VISIBLE;
+      mira.setVisibility(accesa ? View.GONE : View.VISIBLE);
+      miraVisibile.setTextColor(accesa ? 0xFFFFFFFF : 0xFFFFCC00);
+    });
+
+    abilitaZoom();
 
     aggiornaSpazio();
 
@@ -169,7 +208,13 @@ public class RegistrazioneAttivita extends AppCompatActivity {
         cattura = VideoCapture.withOutput(recorder);
 
         fornitore.unbindAll();
-        fornitore.bindToLifecycle(this, CameraSelector.DEFAULT_BACK_CAMERA, vista, cattura);
+        Camera camera = fornitore.bindToLifecycle(
+            this, CameraSelector.DEFAULT_BACK_CAMERA, vista, cattura);
+
+        // I comandi della fotocamera esistono solo dopo il collegamento: lo
+        // zoom prima di qui non avrebbe nulla su cui agire.
+        comandi = camera.getCameraControl();
+        camera.getCameraInfo().getZoomState().observe(this, z -> zoom = z);
       } catch (Exception e) {
         Log.e(TAG, "fotocamera non disponibile", e);
         chiudi("Non e stato possibile aprire la fotocamera.");
@@ -209,10 +254,85 @@ public class RegistrazioneAttivita extends AppCompatActivity {
     }
 
     avvioMs = System.currentTimeMillis();
+    msPrimaDellaPausa = 0;
+    inPausa = false;
     registra.setText("Ferma");
     annulla.setEnabled(false);
+    pausa.setEnabled(true);
+    pausa.setText("Pausa");
     avviso.setVisibility(View.GONE);
     orologio.post(tic);
+  }
+
+  /**
+   * Pausa e ripresa, dentro <b>lo stesso file</b>.
+   *
+   * <p>E la differenza che conta: fermare e ricominciare produrrebbe due
+   * video, e due video vogliono dire due caricamenti da gigabyte e due
+   * analisi da pagare. Qui l'intervallo fra i set semplicemente non viene
+   * registrato, e la partita resta un file solo.
+   *
+   * <p>Conseguenza da sapere: nel video finito i due tronconi sono
+   * consecutivi, senza traccia dell'intervallo. Chi cerchera un'azione per
+   * minuto e secondo dovra contare sul tempo registrato, non sull'orologio
+   * del palazzetto.
+   */
+  private void alternaPausa() {
+    if (inCorso == null) return;
+    try {
+      if (inPausa) {
+        inCorso.resume();
+        avvioMs = System.currentTimeMillis();
+        inPausa = false;
+        pausa.setText("Pausa");
+      } else {
+        inCorso.pause();
+        msPrimaDellaPausa = registratoMs();
+        inPausa = true;
+        pausa.setText("Riprendi");
+      }
+    } catch (Exception e) {
+      // Alcuni apparecchi non permettono la pausa a meta registrazione. Non
+      // e un motivo per fermare tutto: si dice, e si continua a registrare.
+      Log.e(TAG, "pausa non riuscita", e);
+      mostra("Questo telefono non permette di mettere in pausa: la"
+             + " registrazione prosegue.");
+      pausa.setEnabled(false);
+      inPausa = false;
+    }
+  }
+
+  /**
+   * Zoom con due dita.
+   *
+   * <p>Serve a inquadrare, che qui e la cosa che decide se il video sara
+   * analizzabile: da una tribuna lontana il campo entra tutto ma i giocatori
+   * diventano puntini, da vicino si perdono gli angoli. Lo zoom e l'unico
+   * modo di aggiustare senza spostarsi — e spostarsi, a partita iniziata, non
+   * si puo.
+   *
+   * <p>Ottico finche l'apparecchio ce l'ha, poi digitale: CameraX passa
+   * dall'uno all'altro da solo e non c'e niente da decidere qui.
+   */
+  private void abilitaZoom() {
+    ScaleGestureDetector rilevatore = new ScaleGestureDetector(this,
+        new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+          @Override public boolean onScale(@NonNull ScaleGestureDetector d) {
+            if (comandi == null || zoom == null) return true;
+            float attuale = zoom.getZoomRatio() * d.getScaleFactor();
+            // Dentro i limiti dichiarati dall'apparecchio: fuori, la chiamata
+            // viene ignorata in silenzio e lo zoom sembrerebbe inceppato.
+            comandi.setZoomRatio(Math.max(zoom.getMinZoomRatio(),
+                Math.min(attuale, zoom.getMaxZoomRatio())));
+            return true;
+          }
+        });
+    anteprima.setOnTouchListener((v, ev) -> {
+      rilevatore.onTouchEvent(ev);
+      // `performClick` non serve: l'anteprima non e un comando, e senza tocco
+      // singolo non c'e nulla da annunciare a chi usa TalkBack.
+      return true;
+    });
   }
 
   private void evento(VideoRecordEvent e) {
@@ -238,6 +358,11 @@ public class RegistrazioneAttivita extends AppCompatActivity {
 
   private void ferma() {
     registra.setEnabled(false);
+    pausa.setEnabled(false);
+    // In pausa il cronometro e gia fermo: senza questo, `registratoMs()`
+    // ricomincerebbe a contare dal vecchio `avvioMs` e la durata consegnata
+    // includerebbe l'intervallo.
+    if (!inPausa) { msPrimaDellaPausa = registratoMs(); inPausa = true; }
     if (inCorso != null) { inCorso.stop(); inCorso = null; }
     // Non si chiude qui: la chiusura del file e asincrona e il risultato
     // arriva in `evento`. Consegnare adesso darebbe un file troncato.
@@ -247,7 +372,9 @@ public class RegistrazioneAttivita extends AppCompatActivity {
     Intent d = new Intent();
     d.putExtra(EXTRA_PERCORSO, file.getAbsolutePath());
     d.putExtra(EXTRA_BYTE, file.length());
-    d.putExtra(EXTRA_DURATA_MS, System.currentTimeMillis() - avvioMs);
+    // Il tempo REGISTRATO, non quello trascorso: con una pausa fra i set le
+    // due cose divergono, ed e la prima che descrive il file consegnato.
+    d.putExtra(EXTRA_DURATA_MS, registratoMs());
     setResult(Activity.RESULT_OK, d);
     finish();
   }

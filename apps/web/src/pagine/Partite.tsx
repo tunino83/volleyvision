@@ -46,16 +46,21 @@ export default function Partite() {
 
   return (
     <>
-      <div className="riga-sp">
+      {/*
+        * La testata: titolo sopra, comandi sotto.
+        *
+        * Non piu una `.riga-sp` col titolo a sinistra e i pulsanti a destra.
+        * Quel modello regge con **un** comando; con due, a 375 px, la riga
+        * non ci sta piu e i pulsanti finivano addosso al titolo. Su schermo
+        * largo tornano in linea, dove lo spazio c'e davvero.
+        *
+        * I due comandi sono due gesti diversi e non due strade per lo stesso:
+        * "Nuova partita" apre un modulo, lo si compila a tavolino; "Registra"
+        * apre la fotocamera, lo si fa in palestra mentre la partita comincia.
+        */}
+      <div className="testa-pagina">
         <h1>Partite</h1>
-        {/*
-          * Due comandi, perche sono due gesti diversi e non due strade per lo
-          * stesso. "Nuova partita" apre un modulo: lo si compila a tavolino.
-          * "Registra" apre la fotocamera: lo si fa in palestra, mentre la
-          * partita comincia. Chi arriva al campo non deve passare da un
-          * modulo per accendere la telecamera.
-          */}
-        <div className="riga">
+        <div className="azioni-pagina">
           <RegistraPartita modo="pulsante" />
           <button className="primario" onClick={() => nav("/partite/nuova")}>
             <Pallone d={16} /> Nuova partita
@@ -67,10 +72,18 @@ export default function Partite() {
           ha l'applicazione e le registrazioni ancora da collegare. */}
       <RegistraPartita modo="pannello" />
 
-      <div className="riga" style={{ margin: "0 0 20px" }}>
-        <input placeholder="Cerca squadra…" value={q} style={{ maxWidth: 240 }}
+      {/*
+        * I filtri, in griglia e non in fila.
+        *
+        * In fila, su telefono, il campo di ricerca e il menu degli stati si
+        * stringevano a meta larghezza ciascuno: "Cerca squadra…" diventava
+        * "Cerca squ…". In griglia la ricerca prende la riga intera — e quella
+        * che si usa — e il filtro degli stati sta sotto.
+        */}
+      <div className="filtri">
+        <input placeholder="Cerca squadra…" value={q} className="filtro-ricerca"
                onChange={(e) => imposta("q", e.target.value)} />
-        <select value={stato} style={{ maxWidth: 200 }} onChange={(e) => imposta("stato", e.target.value)}>
+        <select value={stato} onChange={(e) => imposta("stato", e.target.value)}>
           <option value="">Tutti gli stati</option>
           <option value="WAITING">In attesa video</option>
           <option value="PENDING">In coda</option>
@@ -78,7 +91,11 @@ export default function Partite() {
           <option value="READY">Pronte</option>
           <option value="ERROR">In errore</option>
         </select>
-        <span className="piccolo muto">{camp.data?.length ?? 0} campionati visibili</span>
+        {/* Ultimo e defilato: e un dato di contorno, non un comando. Su
+            telefono sparisce del tutto — la riga la occupavano i filtri. */}
+        <span className="piccolo muto filtri-nota">
+          {camp.data?.length ?? 0} campionati visibili
+        </span>
       </div>
 
       <Stato caricamento={partite.isLoading} errore={partite.error} vuoto={elementi.length === 0}

@@ -84,6 +84,22 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
+        <!-- La pausa sta PRIMA del comando di registrazione, e a sinistra:
+             durante una partita la si cerca a colpo sicuro, senza guardare, e
+             il pollice destro sta gia sul pulsante grande. -->
+        <Button
+            android:id="@+id/pausa"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pausa"
+            android:textColor="#FFFFFF"
+            android:background="#66000000"
+            android:enabled="false" />
+
+        <Space
+            android:layout_width="12dp"
+            android:layout_height="1dp" />
+
         <Button
             android:id="@+id/registra"
             android:layout_width="wrap_content"
@@ -98,12 +114,15 @@
             android:layout_height="1dp"
             android:layout_weight="1" />
 
-        <!-- Bilanciamento: senza, il pulsante di registrazione non sarebbe al
-             centro dello schermo ma al centro dello spazio rimasto. -->
+        <!-- La mira aiuta a inquadrare, ma una volta trovata l'inquadratura
+             copre l'immagine: si spegne. Non e una preferenza da ricordare —
+             a ogni partita si ricomincia dall'inquadrare. -->
         <Button
+            android:id="@+id/mira_visibile"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Chiudi"
-            android:visibility="invisible" />
+            android:text="Mira"
+            android:textColor="#FFCC00"
+            android:background="#66000000" />
     </LinearLayout>
 </FrameLayout>
