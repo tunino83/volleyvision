@@ -297,11 +297,24 @@ button.icona-solo { padding: 9px; color: var(--muto); border-color: transparent;
 button.icona-solo:hover:not(:disabled) { color: var(--palla); background: var(--carta); }
 
 /* ------------------------------------------------------------------- campi */
-input, select, textarea {
+
+/* Caselle di spunta e scelte singole ESCLUSE.
+   Sono `<input>` per il documento, ma non sono campi da compilare: hanno una
+   dimensione loro, decisa dal sistema. Con `width: 100%` una spunta si
+   dilatava a riempire la riga — su telefono un quadrato da 343 px con
+   accanto il testo schiacciato in una colonna di una parola — e con
+   `padding: 9px 11px` diventava anche piu alta di quanto e larga la lettera
+   che le sta a fianco. */
+input:not([type="checkbox"]):not([type="radio"]), select, textarea {
   font-family: var(--f-testo); font-size: var(--t-corpo);
   padding: 9px 11px;
   border: 1px solid var(--bordo-forte); border-radius: var(--r);
   background: var(--sfondo); color: var(--inchiostro); width: 100%;
+}
+
+/* Un bersaglio premibile col pollice, senza diventare un riquadro. */
+input[type="checkbox"], input[type="radio"] {
+  width: 18px; height: 18px; flex: none; accent-color: var(--palla); cursor: pointer;
 }
 input::placeholder { color: var(--muto); }
 input:disabled { background: var(--sfondo-alt); color: var(--muto); }
@@ -870,7 +883,11 @@ tbody tr:hover { background: var(--carta-alt); }
 /* Le aree toccabili le decide il PUNTATORE, non la larghezza: un tablet largo
    si tocca lo stesso, una finestra stretta col mouse no. */
 @media (pointer: coarse) {
-  button, .bottone, .nav a, .nav-basso a, input, select { min-height: 44px; }
+  /* Spunte e scelte singole escluse: il bersaglio da premere e **l'etichetta**,
+     che le avvolge ed e gia alta molto piu di 44 px. Imponendolo al quadratino
+     si otteneva una scheggia alta 44 e larga 18. */
+  button, .bottone, .nav a, .nav-basso a,
+  input:not([type="checkbox"]):not([type="radio"]), select { min-height: 44px; }
   button.piccolo { min-height: 44px; padding: 8px 12px; }
   /* Va nominato: `.indicatore .valore` ha specificita maggiore di `button` e
      senza questa riga il suo `min-height: 0` vincerebbe anche al tocco. */
@@ -1284,9 +1301,16 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
 
 /* Scelta fra poche voci: pastiglie invece di un menu a tendina.
    Su telefono una select apre un elenco a schermo intero che copre il
-   modulo — si sceglie senza piu vedere cosa si stava compilando. */
-.scelte { display: flex; flex-wrap: wrap; gap: 6px; }
-.scelta {
+   modulo — si sceglie senza piu vedere cosa si stava compilando.
+
+   NON si chiamano `.scelta`: quel nome era gia preso, piu su, dalle etichette
+   con casella di spunta. Ridefinirlo qui le aveva trasformate in pastiglie —
+   la regola piu in basso vince — e la spunta "tieni tutte le partite su
+   questo dispositivo" compariva come un ovale gigante col testo schiacciato
+   in una colonna di una parola. Un nome generico riusato e un difetto che si
+   manifesta lontano da dove lo si e scritto. */
+.opzioni { display: flex; flex-wrap: wrap; gap: 6px; }
+.opzione {
   /* `center` e non `baseline`: la pastiglia di una squadra contiene anche lo
      stemma, e su una linea di base un'immagine si appoggia storta. */
   display: inline-flex; align-items: center; gap: 6px;
@@ -1297,17 +1321,17 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
   /* Su telefono il bersaglio deve restare premibile col pollice. */
   min-height: 38px;
 }
-.scelta:hover { border-color: var(--palla); }
-.scelta-attiva {
+.opzione:hover { border-color: var(--palla); }
+.opzione-attiva {
   border-color: var(--palla); color: var(--palla);
   background: color-mix(in srgb, var(--palla) 12%, transparent);
   font-weight: 600;
 }
-.scelta-nota { font-size: 11px; color: var(--testo-muto); }
-.scelta-attiva .scelta-nota { color: inherit; opacity: .8; }
+.opzione-nota { font-size: 11px; color: var(--testo-muto); }
+.opzione-attiva .opzione-nota { color: inherit; opacity: .8; }
 /* Creare non e scegliere: il tratteggio lo dice senza una parola in piu. */
-.scelta-nuova { border-style: dashed; color: var(--testo-muto); }
-.scelta-ricerca { width: 100%; margin-bottom: 8px; }
+.opzione-nuova { border-style: dashed; color: var(--testo-muto); }
+.opzione-ricerca { width: 100%; margin-bottom: 8px; }
 
 /* La sintesi in cima alla home: due riquadri affiancati che si impilano. */
 .sintesi-home {

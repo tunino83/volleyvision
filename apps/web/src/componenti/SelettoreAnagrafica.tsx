@@ -98,14 +98,14 @@ export function SelettoreAnagrafica({
   return (
     <Campo etichetta={etichetta} errore={errore}>
       {elenco.length > CON_RICERCA && (
-        <input className="scelta-ricerca" value={filtro} placeholder="Cerca…"
+        <input className="opzione-ricerca" value={filtro} placeholder="Cerca…"
                onChange={(e) => setFiltro(e.target.value)} />
       )}
 
-      <div className="scelte">
+      <div className="opzioni">
         {visibili.map((v) => (
           <button key={v.id} type="button"
-                  className={`scelta ${valore === v.id ? "scelta-attiva" : ""}`}
+                  className={`opzione ${valore === v.id ? "opzione-attiva" : ""}`}
                   aria-pressed={valore === v.id}
                   onClick={() => onCambia(valore === v.id ? "" : v.id)}>
             {/*
@@ -115,13 +115,13 @@ export function SelettoreAnagrafica({
               * se ne dimenticherebbe. I campionati non hanno stemma.
               */}
             {risorsa === "/teams" && <Stemma squadra={v as SquadraConStemma} d={20} />}
-            <span className="scelta-nome">{v.nome}</span>
-            {v.stagione && <span className="scelta-nota">{v.stagione}</span>}
+            <span className="opzione-nome">{v.nome}</span>
+            {v.stagione && <span className="opzione-nota">{v.stagione}</span>}
           </button>
         ))}
 
         {/* Creare non e scegliere: si distingue anche a colpo d'occhio. */}
-        <button type="button" className="scelta scelta-nuova" onClick={() => setNuovo(true)}>
+        <button type="button" className="opzione opzione-nuova" onClick={() => setNuovo(true)}>
           + Crea
         </button>
       </div>
