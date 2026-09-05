@@ -7,6 +7,7 @@ import {
   osservaCaricamento, registraPartita, scegliVideoNativo, statoCaricamentoNativo,
   type StatoCaricamentoNativo,
 } from "../platform/nativo";
+import { collega, daCaricare, durata } from "../registrazioni";
 
 /**
  * Il caricamento dentro l'applicazione Android.
@@ -28,6 +29,7 @@ export default function CaricamentoNativo({ partita, video, bloccato }: {
   const [stato, setStato] = useState<StatoCaricamentoNativo | null>(null);
   const [errore, setErrore] = useState<string | null>(null);
   const [inApertura, setInApertura] = useState(false);
+  const [attesa, setAttesa] = useState(daCaricare());
 
   useEffect(() => { capacitaNative().then(setCapacita); }, []);
 
@@ -76,6 +78,13 @@ export default function CaricamentoNativo({ partita, video, bloccato }: {
         titolo: `${partita.home.nome} — ${partita.away.nome}`,
       });
       setStato(iniziale);
+
+      // Collegata, quindi non piu "da collegare": senza questo resterebbe
+      // proposta anche dopo essere stata caricata, e la si caricherebbe due
+      // volte. Solo ora che il trasferimento e partito davvero.
+      collega(scelta.uri, partita.id);
+      setAttesa(daCaricare());
+
       qc.invalidateQueries({ queryKey: ["sessione-caricamento", partita.id, video.lato] });
     } catch (e: any) {
       setErrore(e?.message ?? "Non e stato possibile avviare il caricamento.");
@@ -111,10 +120,39 @@ export default function CaricamentoNativo({ partita, video, bloccato }: {
       )}
       {errore && <div className="avviso errore piccolo" style={{ marginTop: 6 }}>{errore}</div>}
 
+      {/*
+        * Le registrazioni gia fatte, in cima ai comandi.
+        *
+        * E il caso piu frequente e insieme quello che senza questo elenco
+        * sarebbe il piu scomodo: si e ripreso in palestra, si torna a casa,
+        * si crea la partita — e il file andrebbe ripescato a mano fra
+        * decine di video del telefono. Qui e la prima cosa proposta, con la
+        * durata e la data per riconoscerlo.
+        */}
+      {!inCorso && attesa.length > 0 && (
+        <div className="colonna" style={{ marginBottom: 8 }}>
+          {attesa.map((r) => (
+            <div key={r.uri} className="riga-sp registrazione-pronta">
+              <div style={{ minWidth: 0 }}>
+                <div className="grassetto piccolo">Registrazione di {durata(r.durataMs)}</div>
+                <div className="piccolo muto">
+                  {new Date(r.quando).toLocaleString("it-IT")}
+                  {r.byte > 0 && ` · ${(r.byte / 1073741824).toFixed(1)} GB`}
+                </div>
+              </div>
+              <button className="primario piccolo" disabled={bloccato || inApertura}
+                      onClick={() => avvia({ uri: r.uri, nome: r.nome, byte: r.byte })}>
+                Carica questa
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {!inCorso && (
         <div className="riga" style={{ flexWrap: "wrap" }}>
           {capacita.registrazione && (
-            <button className="primario" disabled={bloccato || inApertura}
+            <button className={attesa.length ? "" : "primario"} disabled={bloccato || inApertura}
                     onClick={() => registraPartita().then(avvia).catch((e) => setErrore(e.message))}>
               Registra la partita
             </button>

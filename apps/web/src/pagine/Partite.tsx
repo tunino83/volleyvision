@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { API } from "../api/client";
 import { Carta, Pagine, Pillola, Squadre as Duo, Stato, data, gb } from "../componenti/Ui";
 import { Calendario, Condivisa, Pallone, Video } from "../componenti/Icone";
+import RegistraPartita from "../componenti/RegistraPartita";
 
 interface Pagina { elementi: any[]; totale: number; pagina: number; perPagina: number; pagines?: number; pagine: number }
 
@@ -47,10 +48,24 @@ export default function Partite() {
     <>
       <div className="riga-sp">
         <h1>Partite</h1>
-        <button className="primario" onClick={() => nav("/partite/nuova")}>
-          <Pallone d={16} /> Nuova partita
-        </button>
+        {/*
+          * Due comandi, perche sono due gesti diversi e non due strade per lo
+          * stesso. "Nuova partita" apre un modulo: lo si compila a tavolino.
+          * "Registra" apre la fotocamera: lo si fa in palestra, mentre la
+          * partita comincia. Chi arriva al campo non deve passare da un
+          * modulo per accendere la telecamera.
+          */}
+        <div className="riga">
+          <RegistraPartita modo="pulsante" />
+          <button className="primario" onClick={() => nav("/partite/nuova")}>
+            <Pallone d={16} /> Nuova partita
+          </button>
+        </div>
       </div>
+
+      {/* Fuori dalla riga dei comandi: qui ci finiscono l'avviso per chi non
+          ha l'applicazione e le registrazioni ancora da collegare. */}
+      <RegistraPartita modo="pannello" />
 
       <div className="riga" style={{ margin: "0 0 20px" }}>
         <input placeholder="Cerca squadra…" value={q} style={{ maxWidth: 240 }}

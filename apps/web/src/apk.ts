@@ -7,9 +7,9 @@
 export const APK = {
   /** Percorso servito. La versione e nel nome perche chi lo trova nei
    *  Download, mesi dopo, sappia cosa ha senza installarlo. */
-  percorso: "/scarica/volley-vision-1.4.apk",
-  versione: "1.4",
+  percorso: "/scarica/volley-vision-1.5.apk",
+  versione: "1.5",
   /** Quello che Android confronta per decidere se e un aggiornamento. */
-  codice: 5,
+  codice: 6,
   megabyte: 6.0,
 };

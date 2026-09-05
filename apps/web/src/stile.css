@@ -1432,3 +1432,10 @@ button.piccolo.attivo { border-color: var(--palla); color: var(--palla); }
   font-family: var(--f-display); font-size: 21px; font-weight: 700;
   line-height: 1; color: var(--testo);
 }
+
+/* Una registrazione pronta da caricare, dentro la scheda del video. */
+.registrazione-pronta {
+  padding: 10px var(--sp3);
+  background: var(--carta-alt);
+  border: 1px solid var(--bordo); border-radius: var(--r);
+}

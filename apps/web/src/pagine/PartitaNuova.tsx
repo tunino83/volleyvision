@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { API, type ApiError } from "../api/client";
 import { Campo, Carta } from "../componenti/Ui";
@@ -7,6 +7,18 @@ import { SelettoreAnagrafica } from "../componenti/SelettoreAnagrafica";
 
 export default function PartitaNuova() {
   const nav = useNavigate();
+  const [par] = useSearchParams();
+  /*
+   * Si arriva qui subito dopo aver registrato.
+   *
+   * Non si porta dietro l'indirizzo del file: quello e gia nel registro
+   * locale (`registrazioni.ts`), e passarlo nell'indirizzo significherebbe
+   * averne due copie che possono divergere. Serve solo a dire cosa succede
+   * dopo, perche fra il registrare e il caricare c'e un passaggio — la
+   * formazione del set 1 — che altrimenti sembra un ostacolo comparso dal
+   * nulla.
+   */
+  const daRegistrazione = par.get("registrata") === "1";
   const qc = useQueryClient();
   const [err, setErr] = useState<ApiError | null>(null);
   const [d, setD] = useState({
@@ -39,7 +51,16 @@ export default function PartitaNuova() {
         formazioni. Quella del set 1 e obbligatoria prima di caricare i video: e un dato
         di ingresso per l'analisi. Squadre e campionati che non sono in elenco si creano
         qui, senza uscire dal modulo.
+        {" "}I <b>roster si copiano da soli</b> da quelli delle due squadre, se ce l&apos;hanno.
       </p>
+
+      {daRegistrazione && (
+        <div className="avviso info">
+          <b>Registrazione salvata sul telefono.</b> Di&apos; qui che partita era:
+          la troverai pronta nella scheda <b>Video</b>, dopo aver inserito la
+          formazione del set 1. Il file resta dov&apos;e finche non lo carichi.
+        </div>
+      )}
 
       <Carta className="colonna" style={{ maxWidth: 640 }}>
         <SelettoreAnagrafica

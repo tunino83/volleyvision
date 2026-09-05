@@ -109,7 +109,47 @@ export class MatchesService {
       },
       include: { competition: true, homeTeam: true, awayTeam: true, video: true },
     });
+
+    /*
+     * I roster si copiano subito, se le squadre ne hanno uno.
+     *
+     * Prima erano due clic da fare a mano su ogni partita, sempre gli stessi,
+     * e il caso in cui NON si vogliono e raro: si crea una partita fra due
+     * proprie squadre, e i giocatori sono quelli. Chiedere ogni volta di
+     * confermare l'ovvio e cio che poi fa dimenticare la formazione del set 1
+     * e scoprire al caricamento che manca.
+     *
+     * Resta una **copia**, non un riferimento (`MatchPlayer` esiste apposta):
+     * se domani la squadra cambia i numeri di maglia, questa partita conserva
+     * quelli che aveva. Ed e ancora modificabile a mano, compresa la
+     * reimportazione da `importaRoster`, per chi schiera altro.
+     */
+    const righe = [
+      ...await this.righeRoster(m.id, "h", dto.homeTeamId),
+      ...await this.righeRoster(m.id, "a", dto.awayTeamId),
+    ];
+    // Una squadra senza giocatori non e un errore: alla prima partita e il
+    // caso normale. Semplicemente non c'e niente da copiare.
+    if (righe.length) await this.prisma.matchPlayer.createMany({ data: righe });
+
     return this.dto(m, userId);
+  }
+
+  /**
+   * Le righe di roster da scrivere per un lato, copiate dalla squadra.
+   *
+   * Ritorna i dati invece di scriverli perche i due chiamanti hanno bisogni
+   * diversi: alla creazione si inserisce e basta, alla reimportazione si
+   * cancella e si reinserisce **nella stessa transazione** — e li scrivere
+   * fuori dalla transazione significherebbe, se qualcosa va storto, aver
+   * cancellato un roster senza rimpiazzarlo.
+   */
+  private async righeRoster(matchId: string, lato: "h" | "a", teamId: string) {
+    const src = await this.prisma.teamPlayer.findMany({ where: { teamId } });
+    return src.slice(0, LIMITS.maxMatchPlayers).map((g) => ({
+      matchId, lato, numeroMaglia: g.numeroMaglia, cognome: g.cognome, nome: g.nome,
+      ruolo: g.ruolo, libero: g.libero, personId: g.personId,
+    }));
   }
 
   async dettaglio(userId: string, id: string) {
@@ -397,15 +437,10 @@ export class MatchesService {
     const { match } = await this.access.match(userId, id, true);
     this.esigi(match.stato, "modificaRoster", "Importazione del roster");
     const teamId = lato === "h" ? match.homeTeamId : match.awayTeamId;
-    const src = await this.prisma.teamPlayer.findMany({ where: { teamId } });
+    const righe = await this.righeRoster(id, lato, teamId);
     await this.prisma.$transaction([
       this.prisma.matchPlayer.deleteMany({ where: { matchId: id, lato } }),
-      this.prisma.matchPlayer.createMany({
-        data: src.slice(0, LIMITS.maxMatchPlayers).map((g) => ({
-          matchId: id, lato, numeroMaglia: g.numeroMaglia, cognome: g.cognome, nome: g.nome,
-          ruolo: g.ruolo, libero: g.libero, personId: g.personId,
-        })),
-      }),
+      this.prisma.matchPlayer.createMany({ data: righe }),
     ]);
     return this.dettaglio(userId, id);
   }
