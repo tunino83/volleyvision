@@ -10,6 +10,7 @@ rilascio, specifiche di dettaglio, piano di sviluppo).
 
 | File | Quando serve |
 |---|---|
+| `TODO.md` | **cosa manca e cosa blocca**: account da aprire, esercizio, sicurezza, iOS. Parti da qui per capire dove siamo |
 | `docs/00-stato.md` | cosa esiste e cosa no, sempre |
 | `docs/05-interventi.md` | **i punti aperti numerati: parti sempre da qui** |
 | `docs/01-architettura.md` | prima di aggiungere un modulo o una schermata |
